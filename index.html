@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Planner</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#F5F5F7">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body class="light-theme">
+
+    <!-- Main Screen -->
+    <div id="app" class="app-container">
+
+        <!-- Header -->
+        <header class="main-header">
+            <div class="search-bar">
+                <i class="fas fa-search"></i>
+                <input type="text" id="global-search" placeholder="Поиск...">
+            </div>
+            <div class="date-header">
+                <div class="subtitle">ПЛАНЕР</div>
+                <h1 id="header-date">Сегодня</h1>
+            </div>
+        </header>
+
+        <!-- Category Stack -->
+        <div class="category-stack" id="category-stack">
+            <!-- Categories will be injected here -->
+        </div>
+
+        <!-- Spacer for Dock -->
+        <div class="dock-spacer"></div>
+
+        <!-- Bottom Dock -->
+        <div class="bottom-dock">
+            <div class="dock-content">
+                <button class="dock-btn active" id="nav-home">
+                    <i class="fas fa-home"></i>
+                </button>
+                <button class="dock-fab" id="nav-add">
+                    <i class="fas fa-plus"></i>
+                </button>
+                <button class="dock-btn" id="nav-cats">
+                    <i class="fas fa-folder"></i>
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Modals -->
+
+    <!-- Add Task Modal -->
+    <div class="modal overlay hidden" id="modal-add-task">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2 id="modal-title">НОВАЯ ЗАДАЧА</h2>
+                <button class="close-btn" id="close-add-task"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="input-title" class="input-large" placeholder="Название задачи">
+                <textarea id="input-desc" class="input-area" placeholder="Описание / Комментарий"></textarea>
+
+                <div class="input-row clickable" id="btn-pick-date">
+                    <div class="row-left">
+                        <i class="fas fa-calendar-alt accent-icon"></i>
+                        <span id="label-date">Без дедлайна</span>
+                    </div>
+                    <button class="clear-date hidden" id="btn-clear-date"><i class="fas fa-times"></i></button>
+                </div>
+
+                <div class="input-row clickable relative" id="btn-pick-cat">
+                    <div class="row-left">
+                        <span id="label-cat" class="text-accent bold">ОБЩИЕ</span>
+                        <i class="fas fa-chevron-down accent-icon small"></i>
+                    </div>
+                </div>
+                <!-- Mini Dropdown for Categories -->
+                <div class="dropdown hidden" id="dropdown-cat">
+                    <!-- Cat items injected -->
+                </div>
+
+                <input type="text" id="input-tags" class="input-std" placeholder="Теги (через запятую)">
+
+                <div class="input-row">
+                    <i class="far fa-clock text-gray"></i>
+                    <input type="time" id="input-time" class="input-transparent">
+                </div>
+
+                <button class="btn-primary" id="btn-save-task">СОЗДАТЬ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Date Picker Modal (Simple Overlay) -->
+    <div class="modal overlay hidden" id="modal-datepicker">
+        <div class="modal-card compact">
+            <input type="date" id="input-date-native">
+            <div class="modal-actions">
+                <button class="btn-text" id="btn-cancel-date">Отмена</button>
+                <button class="btn-text accent" id="btn-confirm-date">ВЫБРАТЬ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="app.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+    </script>
+</body>
+
+</html>
