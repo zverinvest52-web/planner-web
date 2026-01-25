@@ -165,19 +165,86 @@ function renderTasksForCategory(container, taskList) {
         `;
 
         // Attach listeners
-        const toggleHandler = (e) => {
-            e.stopPropagation();
+        // Checkbox -> Toggle
+        const checkboxArea = div.querySelector('.task-checkbox-area');
+        checkboxArea.addEventListener('click', (e) => {
+            e.stopPropagation(); // Don't trigger body click
             toggleTask(task.id);
-        };
-        div.querySelector('.task-checkbox-area').addEventListener('click', toggleHandler);
-        // div.querySelector('.task-content').addEventListener('click', toggleHandler); 
-        // Better to make whole item clickable except specific actions if needed?
-        // Let's make the whole item toggle for ease
-        div.addEventListener('click', toggleHandler);
+        });
+
+        // Body -> View Details/Edit
+        const contentArea = div.querySelector('.task-content');
+        contentArea.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openTaskDetails(task);
+        });
+
+        // Also bind the info pill if it exists
+        const infoPill = div.querySelector('.info-pill');
+        if (infoPill) {
+            infoPill.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openTaskDetails(task);
+            });
+        }
 
         container.appendChild(div);
     });
 }
+
+// Task Details / Edit Logic
+let currentEditingTaskId = null;
+
+function openTaskDetails(task) {
+    currentEditingTaskId = task.id;
+
+    // Populate Edit Modal (Reuse Add Modal or separate? Let's genericize the modal)
+    // We will use the same modal but changing title and buttons.
+    const modalTitle = document.getElementById('modal-title');
+    const btnSave = document.getElementById('btn-save-task');
+    const btnDelete = document.getElementById('btn-delete-task'); // We need to add this to HTML
+
+    modalTitle.innerText = "РЕДАКТИРОВАНИЕ";
+    btnSave.innerText = "СОХРАНИТЬ";
+
+    // Show delete button
+    if (btnDelete) btnDelete.classList.remove('hidden');
+
+    document.getElementById('input-title').value = task.title;
+    document.getElementById('input-desc').value = task.description || '';
+    document.getElementById('input-tags').value = (task.tags || []).toString(); // simple array to string
+    document.getElementById('input-time').value = task.time || '';
+
+    selectedCategory = task.category;
+    document.getElementById('label-cat').innerText = selectedCategory;
+
+    selectedDate = task.date;
+    updateDateLabel();
+
+    modalAdd.classList.remove('hidden');
+}
+
+// Fix Add Button to reset state
+document.getElementById('nav-add').onclick = () => {
+    currentEditingTaskId = null; // New task mode
+
+    document.getElementById('modal-title').innerText = "НОВАЯ ЗАДАЧА";
+    document.getElementById('btn-save-task').innerText = "СОЗДАТЬ";
+    const btnDelete = document.getElementById('btn-delete-task');
+    if (btnDelete) btnDelete.classList.add('hidden');
+
+    // Reset form
+    document.getElementById('input-title').value = '';
+    document.getElementById('input-desc').value = '';
+    document.getElementById('input-tags').value = '';
+    document.getElementById('input-time').value = '';
+    selectedDate = null;
+    updateDateLabel();
+    selectedCategory = expandedCategory || categories[0]; // Default to current category
+    document.getElementById('label-cat').innerText = selectedCategory;
+
+    modalAdd.classList.remove('hidden');
+};
 
 function toggleTask(id) {
     const t = tasks.find(x => x.id === id);
@@ -221,21 +288,53 @@ document.getElementById('btn-save-task').onclick = () => {
     const title = document.getElementById('input-title').value.trim();
     if (!title) return;
 
-    const newTask = {
-        id: Date.now().toString(),
-        title: title,
-        description: document.getElementById('input-desc').value,
-        category: selectedCategory,
-        tags: document.getElementById('input-tags').value,
-        time: document.getElementById('input-time').value,
-        date: selectedDate, // Can be null
-        completed: false
-    };
+    if (currentEditingTaskId) {
+        // Edit Mode
+        const taskIndex = tasks.findIndex(t => t.id === currentEditingTaskId);
+        if (taskIndex > -1) {
+            tasks[taskIndex] = {
+                ...tasks[taskIndex], // keep id and other props
+                title: title,
+                description: document.getElementById('input-desc').value,
+                category: selectedCategory,
+                tags: document.getElementById('input-tags').value, // Needs split? Let's keep existing logic if any
+                time: document.getElementById('input-time').value,
+                date: selectedDate
+            };
+        }
+    } else {
+        // Create Mode
+        const newTask = {
+            id: Date.now().toString(),
+            title: title,
+            description: document.getElementById('input-desc').value,
+            category: selectedCategory,
+            tags: document.getElementById('input-tags').value,
+            time: document.getElementById('input-time').value,
+            date: selectedDate,
+            completed: false
+        };
+        tasks.push(newTask);
+    }
 
-    tasks.push(newTask);
     save();
     modalAdd.classList.add('hidden');
 };
+
+// Add Delete Button Logic (will need HTML update)
+// We'll attach it safely just in case HTML isn't updated same tick, but we will update HTML next.
+setTimeout(() => {
+    const btnDelete = document.getElementById('btn-delete-task');
+    if (btnDelete) {
+        btnDelete.onclick = () => {
+            if (currentEditingTaskId) {
+                tasks = tasks.filter(t => t.id !== currentEditingTaskId);
+                save();
+                modalAdd.classList.add('hidden');
+            }
+        };
+    }
+}, 500);
 
 // Date Picking
 document.getElementById('btn-pick-date').onclick = () => {
