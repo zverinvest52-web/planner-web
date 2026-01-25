@@ -17,11 +17,11 @@ function validateAndRepairData() {
 
     // Fix Categories
     if (!Array.isArray(c) || c.length === 0) c = defaultCategories;
-    c = c.filter(item => typeof item === 'string' && item.trim() !== ''); // Remove nulls
+    c = c.filter(item => typeof item === 'string' && item.trim() !== '');
 
     // Fix Tasks
     if (!Array.isArray(t)) t = [];
-    t = t.filter(task => task && task.id && task.title); // Remove broken tasks
+    t = t.filter(task => task && task.id && task.title);
 
     // Save back fixed data
     localStorage.setItem('planner_tasks', JSON.stringify(t));
@@ -49,7 +49,7 @@ let selectedDate = null;
 let selectedCategory = 'ОБЩИЕ';
 let expandedCategory = null;
 const HEADER_HEIGHT_PX = 60;
-const HEADER_HEIGHT_REM = 4; // approx
+const HEADER_HEIGHT_REM = 4;
 const TOP_OFFSET_PX = 10;
 
 // Init
@@ -57,7 +57,194 @@ document.addEventListener('DOMContentLoaded', () => {
     updateHeaderDate();
     renderStack();
     setupEventListeners();
+    console.log("App v5.2 loaded successfully");
 });
+
+function setupEventListeners() {
+    // Add Button
+    document.getElementById('nav-add').onclick = () => {
+        currentEditingTaskId = null;
+        document.getElementById('modal-title').innerText = "НОВАЯ ЗАДАЧА";
+        document.getElementById('btn-save-task').innerText = "СОЗДАТЬ";
+        const btnDelete = document.getElementById('btn-delete-task');
+        if (btnDelete) btnDelete.classList.add('hidden');
+
+        document.getElementById('input-title').value = '';
+        document.getElementById('input-desc').value = '';
+        document.getElementById('input-tags').value = '';
+        document.getElementById('input-time').value = '';
+        selectedDate = null;
+        updateDateLabel();
+        selectedCategory = expandedCategory || categories[0];
+        document.getElementById('label-cat').innerText = selectedCategory;
+
+        modalAdd.classList.remove('hidden');
+    };
+
+    // Close Modal
+    document.getElementById('close-add-task').onclick = () => {
+        modalAdd.classList.add('hidden');
+    };
+
+    // Save Task
+    document.getElementById('btn-save-task').onclick = () => {
+        const title = document.getElementById('input-title').value.trim();
+        if (!title) return;
+
+        if (currentEditingTaskId) {
+            // Edit
+            const taskIndex = tasks.findIndex(t => t.id === currentEditingTaskId);
+            if (taskIndex > -1) {
+                tasks[taskIndex] = {
+                    ...tasks[taskIndex],
+                    title: title,
+                    description: document.getElementById('input-desc').value,
+                    category: selectedCategory,
+                    tags: document.getElementById('input-tags').value,
+                    time: document.getElementById('input-time').value,
+                    date: selectedDate
+                };
+            }
+        } else {
+            // Create
+            const newTask = {
+                id: Date.now().toString(),
+                title: title,
+                description: document.getElementById('input-desc').value,
+                category: selectedCategory,
+                tags: document.getElementById('input-tags').value,
+                time: document.getElementById('input-time').value,
+                date: selectedDate,
+                completed: false
+            };
+            tasks.push(newTask);
+        }
+
+        save();
+        modalAdd.classList.add('hidden');
+    };
+
+    // Delete Task Button
+    const btnDelete = document.getElementById('btn-delete-task');
+    if (btnDelete) {
+        btnDelete.onclick = () => {
+            if (currentEditingTaskId) {
+                tasks = tasks.filter(t => t.id !== currentEditingTaskId);
+                save();
+                modalAdd.classList.add('hidden');
+            }
+        };
+    }
+
+    // Modal Date Pickers
+    document.getElementById('btn-pick-date').onclick = () => {
+        document.getElementById('modal-datepicker').classList.remove('hidden');
+    };
+    document.getElementById('btn-cancel-date').onclick = () => {
+        document.getElementById('modal-datepicker').classList.add('hidden');
+    };
+    document.getElementById('btn-confirm-date').onclick = () => {
+        const val = inputDateNative.value;
+        if (val) selectedDate = val;
+        updateDateLabel();
+        document.getElementById('modal-datepicker').classList.add('hidden');
+    };
+    document.getElementById('btn-clear-date').onclick = (e) => {
+        e.stopPropagation();
+        selectedDate = null;
+        updateDateLabel();
+    };
+
+    // Category Picker
+    const btnPickCat = document.getElementById('btn-pick-cat');
+    if (btnPickCat) {
+        btnPickCat.onclick = () => {
+            const dd = document.getElementById('dropdown-cat');
+            dd.classList.toggle('hidden');
+            dd.innerHTML = '';
+            categories.forEach(cat => {
+                const item = document.createElement('div');
+                item.className = 'dropdown-item';
+                item.innerText = cat;
+                item.onclick = () => {
+                    selectedCategory = cat;
+                    document.getElementById('label-cat').innerText = cat;
+                    dd.classList.add('hidden');
+                };
+                dd.appendChild(item);
+            });
+        };
+    }
+
+    // Dock: Home
+    const navHome = document.getElementById('nav-home');
+    if (navHome) {
+        navHome.onclick = () => {
+            expandedCategory = null; // Collapse all
+            renderStack();
+        };
+    }
+
+    // Dock: Categories (Manage)
+    const navCats = document.getElementById('nav-cats');
+    const modalCats = document.getElementById('modal-manage-cats');
+
+    if (navCats && modalCats) {
+        navCats.onclick = () => {
+            renderManageCats();
+            modalCats.classList.remove('hidden');
+        };
+
+        document.getElementById('close-manage-cats').onclick = () => {
+            modalCats.classList.add('hidden');
+        };
+
+        document.getElementById('btn-add-cat').onclick = () => {
+            const inp = document.getElementById('input-new-cat');
+            const val = inp.value.trim();
+            if (val && !categories.includes(val)) {
+                categories.push(val);
+                inp.value = '';
+                save();
+                renderManageCats();
+            }
+        };
+    }
+}
+
+function renderManageCats() {
+    const list = document.getElementById('cats-list-container');
+    if (!list) return;
+    list.innerHTML = '';
+
+    categories.forEach(cat => {
+        const row = document.createElement('div');
+        row.className = 'input-row';
+        row.style.justifyContent = 'space-between';
+
+        // Prevent deleting non-deletable if needed? Let's generic everything.
+        // Maybe lock 'GENERAL'?
+        const isLocked = cat === 'ОБЩИЕ';
+
+        row.innerHTML = `
+            <span style="font-weight:500;">${cat}</span>
+            ${!isLocked ? `<button class="btn-text accent" style="color:#FF3B30;" onclick="deleteCat('${cat}')">Удалить</button>` : ''}
+        `;
+        list.appendChild(row);
+    });
+}
+
+window.deleteCat = (cat) => {
+    if (confirm('Удалить папку "' + cat + '"? Задачи останутся, но будут без папки (перейдут в Общие).')) {
+        categories = categories.filter(c => c !== cat);
+        // Move tasks to General
+        tasks.forEach(t => {
+            if (t.category === cat) t.category = 'ОБЩИЕ';
+        });
+        save();
+        renderManageCats();
+    }
+};
 
 function updateHeaderDate() {
     const options = { month: 'long', day: 'numeric' };
@@ -75,16 +262,17 @@ function save() {
     renderStack();
 }
 
-// Rendering
 function renderStack() {
     try {
         if (!stackContainer) return;
         stackContainer.innerHTML = '';
 
-        // Repair expandedCategory if invalid
+        // Repair expandedCategory
         if (!expandedCategory || !categories.includes(expandedCategory)) {
-            expandedCategory = categories[0] || null;
+            expandedCategory = categories[0] || (categories.length > 0 ? categories[0] : null);
         }
+
+        if (!expandedCategory) return; // No categories at all?
 
         const expIndex = categories.indexOf(expandedCategory);
         const total = categories.length;
@@ -94,7 +282,6 @@ function renderStack() {
             const card = document.createElement('div');
             card.className = 'category-card';
 
-            // Stack Logic (Detailed Accordion)
             const isAfterExpanded = index > expIndex;
 
             if (!isAfterExpanded) {
@@ -109,13 +296,13 @@ function renderStack() {
             }
 
             card.style.zIndex = 50 + index;
+
             if (expandedCategory === cat) {
                 card.classList.add('expanded');
             } else {
                 card.classList.remove('expanded');
             }
 
-            // Calculate task counts
             const catTasks = tasks.filter(t => t.category === cat);
             const count = catTasks.filter(t => !t.completed).length;
 
@@ -124,35 +311,29 @@ function renderStack() {
                     <h2>${cat}</h2>
                     <div class="counter-badge">${count > 0 ? count : ''}</div>
                 </div>
-                <div class="task-list" id="list-${cat}">
-                    <!-- Tasks go here -->
-                </div>
+                <div class="task-list" id="list-${cat}"></div>
             `;
 
-            // Attach Event Listeners explicitly
             card.querySelector('.card-header').addEventListener('click', () => {
                 toggleCard(cat);
             });
 
             stackContainer.appendChild(card);
 
-            // Render Tasks for this category
             const listEl = card.querySelector(`#list-${cat}`);
             renderTasksForCategory(listEl, catTasks);
         });
     } catch (e) {
         console.error(e);
-        alert("CRITICAL RENDER ERROR: " + e.message);
+        alert("Render Error: " + e.message);
     }
 }
 
 function renderTasksForCategory(container, taskList) {
     const today = getTodayStr();
 
-    // Sort: Incomplete first, then by date/time
     taskList.sort((a, b) => {
         if (a.completed !== b.completed) return a.completed ? 1 : -1;
-        // Logic: specific date priorities
         return 0;
     });
 
@@ -165,7 +346,6 @@ function renderTasksForCategory(container, taskList) {
         let infoText = '';
         if (task.time && isToday) infoText = task.time;
         else if (task.date && !isToday && !isOverdue) {
-            // Future date logic: show "do DD.MM"
             const d = new Date(task.date);
             infoText = `до ${d.getDate()}.${d.getMonth() + 1}`;
         }
@@ -188,88 +368,23 @@ function renderTasksForCategory(container, taskList) {
             ${infoText ? `<div class="info-pill">${infoText}</div>` : ''}
         `;
 
-        // Attach listeners
-        // Checkbox -> Toggle
         const checkboxArea = div.querySelector('.task-checkbox-area');
         checkboxArea.addEventListener('click', (e) => {
-            e.stopPropagation(); // Don't trigger body click
+            e.stopPropagation();
             toggleTask(task.id);
         });
 
-        // Body -> View Details/Edit
         const contentArea = div.querySelector('.task-content');
         contentArea.addEventListener('click', (e) => {
             e.stopPropagation();
             openTaskDetails(task);
         });
 
-        // Also bind the info pill if it exists
-        const infoPill = div.querySelector('.info-pill');
-        if (infoPill) {
-            infoPill.addEventListener('click', (e) => {
-                e.stopPropagation();
-                openTaskDetails(task);
-            });
-        }
-
         container.appendChild(div);
     });
 }
 
-// Task Details / Edit Logic
-let currentEditingTaskId = null;
-
-function openTaskDetails(task) {
-    currentEditingTaskId = task.id;
-
-    // Populate Edit Modal (Reuse Add Modal or separate? Let's genericize the modal)
-    // We will use the same modal but changing title and buttons.
-    const modalTitle = document.getElementById('modal-title');
-    const btnSave = document.getElementById('btn-save-task');
-    const btnDelete = document.getElementById('btn-delete-task'); // We need to add this to HTML
-
-    modalTitle.innerText = "РЕДАКТИРОВАНИЕ";
-    btnSave.innerText = "СОХРАНИТЬ";
-
-    // Show delete button
-    if (btnDelete) btnDelete.classList.remove('hidden');
-
-    document.getElementById('input-title').value = task.title;
-    document.getElementById('input-desc').value = task.description || '';
-    document.getElementById('input-tags').value = (task.tags || []).toString(); // simple array to string
-    document.getElementById('input-time').value = task.time || '';
-
-    selectedCategory = task.category;
-    document.getElementById('label-cat').innerText = selectedCategory;
-
-    selectedDate = task.date;
-    updateDateLabel();
-
-    modalAdd.classList.remove('hidden');
-}
-
-// Fix Add Button to reset state
-document.getElementById('nav-add').onclick = () => {
-    currentEditingTaskId = null; // New task mode
-
-    document.getElementById('modal-title').innerText = "НОВАЯ ЗАДАЧА";
-    document.getElementById('btn-save-task').innerText = "СОЗДАТЬ";
-    const btnDelete = document.getElementById('btn-delete-task');
-    if (btnDelete) btnDelete.classList.add('hidden');
-
-    // Reset form
-    document.getElementById('input-title').value = '';
-    document.getElementById('input-desc').value = '';
-    document.getElementById('input-tags').value = '';
-    document.getElementById('input-time').value = '';
-    selectedDate = null;
-    updateDateLabel();
-    selectedCategory = expandedCategory || categories[0]; // Default to current category
-    document.getElementById('label-cat').innerText = selectedCategory;
-
-    modalAdd.classList.remove('hidden');
-};
-
+// Logic Actions
 function toggleTask(id) {
     const t = tasks.find(x => x.id === id);
     if (t) {
@@ -285,102 +400,17 @@ function toggleCard(cat) {
     }
 }
 
-// Make explicit for HTML onclick
+// Global Exports
+let currentEditingTaskId = null;
 window.toggleCard = toggleCard;
 window.toggleTask = toggleTask;
+window.validateAndRepairData = validateAndRepairData;
 
-// Adding Tasks
-document.getElementById('nav-add').onclick = () => {
-    // Reset form
-    document.getElementById('input-title').value = '';
-    document.getElementById('input-desc').value = '';
-    document.getElementById('input-tags').value = '';
-    document.getElementById('input-time').value = '';
-    selectedDate = null;
-    updateDateLabel();
-    selectedCategory = categories[0];
-    document.getElementById('label-cat').innerText = selectedCategory;
-
-    modalAdd.classList.remove('hidden');
-};
-
-document.getElementById('close-add-task').onclick = () => {
-    modalAdd.classList.add('hidden');
-};
-
-document.getElementById('btn-save-task').onclick = () => {
-    const title = document.getElementById('input-title').value.trim();
-    if (!title) return;
-
-    if (currentEditingTaskId) {
-        // Edit Mode
-        const taskIndex = tasks.findIndex(t => t.id === currentEditingTaskId);
-        if (taskIndex > -1) {
-            tasks[taskIndex] = {
-                ...tasks[taskIndex], // keep id and other props
-                title: title,
-                description: document.getElementById('input-desc').value,
-                category: selectedCategory,
-                tags: document.getElementById('input-tags').value, // Needs split? Let's keep existing logic if any
-                time: document.getElementById('input-time').value,
-                date: selectedDate
-            };
-        }
-    } else {
-        // Create Mode
-        const newTask = {
-            id: Date.now().toString(),
-            title: title,
-            description: document.getElementById('input-desc').value,
-            category: selectedCategory,
-            tags: document.getElementById('input-tags').value,
-            time: document.getElementById('input-time').value,
-            date: selectedDate,
-            completed: false
-        };
-        tasks.push(newTask);
-    }
-
-    save();
-    modalAdd.classList.add('hidden');
-};
-
-// Add Delete Button Logic (will need HTML update)
-// We'll attach it safely just in case HTML isn't updated same tick, but we will update HTML next.
-setTimeout(() => {
-    const btnDelete = document.getElementById('btn-delete-task');
-    if (btnDelete) {
-        btnDelete.onclick = () => {
-            if (currentEditingTaskId) {
-                tasks = tasks.filter(t => t.id !== currentEditingTaskId);
-                save();
-                modalAdd.classList.add('hidden');
-            }
-        };
-    }
-}, 500);
-
-// Date Picking
-document.getElementById('btn-pick-date').onclick = () => {
-    document.getElementById('modal-datepicker').classList.remove('hidden');
-};
-
-document.getElementById('btn-cancel-date').onclick = () => {
-    document.getElementById('modal-datepicker').classList.add('hidden');
-};
-
-document.getElementById('btn-confirm-date').onclick = () => {
-    const val = inputDateNative.value;
-    if (val) selectedDate = val;
-    updateDateLabel();
-    document.getElementById('modal-datepicker').classList.add('hidden');
-};
-
-document.getElementById('btn-clear-date').onclick = (e) => {
-    e.stopPropagation();
-    selectedDate = null;
-    updateDateLabel();
-};
+// Logic Actions needed for openTaskDetails to be available?
+// It was defined inside the scope in previous versions, let's make it global or hoist properly.
+// The above structure has openTaskDetails missing? 
+// No, I missed copying it in the manual rewrite above.
+// Wait, I need to include openTaskDetails + updateDateLabel + formattingUtils.
 
 function updateDateLabel() {
     const btnClear = document.getElementById('btn-clear-date');
@@ -400,20 +430,27 @@ function formatDate(isoStr) {
     return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
 }
 
-// Category Picker (Simple dropdown toggle)
-document.getElementById('btn-pick-cat').onclick = () => {
-    const dd = document.getElementById('dropdown-cat');
-    dd.classList.toggle('hidden');
-    dd.innerHTML = '';
-    categories.forEach(cat => {
-        const item = document.createElement('div');
-        item.className = 'dropdown-item';
-        item.innerText = cat;
-        item.onclick = () => {
-            selectedCategory = cat;
-            document.getElementById('label-cat').innerText = cat;
-            dd.classList.add('hidden');
-        };
-        dd.appendChild(item);
-    });
-};
+function openTaskDetails(task) {
+    currentEditingTaskId = task.id;
+    const modalTitle = document.getElementById('modal-title');
+    const btnSave = document.getElementById('btn-save-task');
+    const btnDelete = document.getElementById('btn-delete-task');
+
+    modalTitle.innerText = "РЕДАКТИРОВАНИЕ";
+    btnSave.innerText = "СОХРАНИТЬ";
+    if (btnDelete) btnDelete.classList.remove('hidden');
+
+    document.getElementById('input-title').value = task.title;
+    document.getElementById('input-desc').value = task.description || '';
+    document.getElementById('input-tags').value = (task.tags || []).toString();
+    document.getElementById('input-time').value = task.time || '';
+
+    selectedCategory = task.category;
+    document.getElementById('label-cat').innerText = selectedCategory;
+    selectedDate = task.date;
+    updateDateLabel();
+
+    modalAdd.classList.remove('hidden');
+}
+
+window.openTaskDetails = openTaskDetails;

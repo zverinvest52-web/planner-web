@@ -112,7 +112,25 @@
         </div>
     </div>
 
-    <!-- Date Picker Modal (Simple Overlay) -->
+    <!-- Category Manager Modal -->
+    <div class="modal overlay hidden" id="modal-manage-cats">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2>КАТЕГОРИИ</h2>
+                <button class="close-btn" id="close-manage-cats"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div id="cats-list-container" style="max-height: 300px; overflow-y: auto; margin-bottom: 20px;"></div>
+                <div class="input-row" style="border:none; padding:0;">
+                    <input type="text" id="input-new-cat" class="input-std" placeholder="Название..."
+                        style="margin-bottom:0; flex:1;">
+                    <button class="dock-fab" id="btn-add-cat"
+                        style="width:40px; height:40px; font-size:16px; margin-left:10px; box-shadow:none;"><i
+                            class="fas fa-plus"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="modal overlay hidden" id="modal-datepicker">
         <div class="modal-card compact">
             <input type="date" id="input-date-native">
