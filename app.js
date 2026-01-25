@@ -19,6 +19,7 @@ const inputDateNative = document.getElementById('input-date-native');
 const labelDate = document.getElementById('label-date');
 let selectedDate = null; // YYYY-MM-DD or null
 let selectedCategory = 'ОБЩИЕ';
+let expandedCategory = null;
 // Header height settings
 const HEADER_HEIGHT_PX = 60;
 const HEADER_HEIGHT_REM = 4; // approx
