@@ -1,7 +1,16 @@
 // State
-let tasks = JSON.parse(localStorage.getItem('planner_tasks')) || [];
+// Helper for safe parsing
+function safeParse(key, def) {
+    try {
+        return JSON.parse(localStorage.getItem(key)) || def;
+    } catch (e) {
+        return def;
+    }
+}
+// State
+let tasks = safeParse('planner_tasks', []);
 const defaultCategories = ['ОБЩИЕ', 'РАБОТА', 'ДОМ', 'ЛИЧНЫЕ'];
-let categories = JSON.parse(localStorage.getItem('planner_categories')) || defaultCategories;
+let categories = safeParse('planner_categories', defaultCategories);
 
 // DOM Elements
 const stackContainer = document.getElementById('category-stack');
@@ -10,7 +19,8 @@ const inputDateNative = document.getElementById('input-date-native');
 const labelDate = document.getElementById('label-date');
 let selectedDate = null; // YYYY-MM-DD or null
 let selectedCategory = 'ОБЩИЕ';
-let activeCategoryCard = null; // Which card is currently on top/expanded
+let expandedCategory = null; // which category is currently expanded taking up space
+const HEADER_HEIGHT = 80; // Height of the visible header part of the card
 
 // Init
 document.addEventListener('DOMContentLoaded', () => {
@@ -39,14 +49,60 @@ function save() {
 function renderStack() {
     stackContainer.innerHTML = '';
 
-    // We render categories in reverse order visually so first is top
-    // taking into account z-index.
-    // Actually, physically they stack.
+    const total = categories.length;
+    let currentY = 0;
+
+    // Determine if we have an expanded card
+    // If nothing is expanded, default to first or none?
+    // Let's default to first expand if null
+    if (!expandedCategory && categories.length > 0) expandedCategory = categories[0];
+
+    // Find index of expanded
+    const expIndex = categories.indexOf(expandedCategory);
+
     categories.forEach((cat, index) => {
         const card = document.createElement('div');
         card.className = 'category-card';
-        card.style.top = `${index * 60}px`; // Header Offset
-        card.style.zIndex = index + 1;
+
+        // Stack Logic (Accordion)
+        // If this card is AT or BEFORE the expanded card:
+        // It stacks from top: index * HEADER_HEIGHT
+        // If this card is AFTER the expanded card:
+        // It pushes to bottom: ScreenHeight - ((total - index) * HEADER_HEIGHT)
+        // BUT we need to be careful about container height.
+        // Let's assume container is flex or 100%.
+
+        // Simpler Logic:
+        // Cards 0..expIndex are stacked at top.
+        // Cards expIndex+1..end are pushed down.
+
+        // Visual calculation:
+        // Container height ~ screen height - header - dock. 
+        // Better to use CSS classes or relative calc?
+        // Let's use calc in JS.
+
+        const isAfterExpanded = index > expIndex;
+
+        if (!isAfterExpanded) {
+            // Stack at top
+            card.style.top = `${index * HEADER_HEIGHT}px`;
+        } else {
+            // Stack at bottom (Push down)
+            // We want the expanded card to have free space until the next card starts.
+            // Next card starts at Bottom - (remaining * HEADER_HEIGHT).
+            // Let's use css calc(100% - ...)
+            // HACK for PWA: simple calc.
+            const cardsBelow = total - index;
+            card.style.top = `calc(100% - ${cardsBelow * HEADER_HEIGHT}px)`;
+        }
+
+        // Z-Index: Lower index = Lower Z? 
+        // Actually for this accordion, top cards cover bottom when collapsed? 
+        // No, visually: Header 0, Header 1, Header 2...
+        // Header 1 is "below" Header 0 in Y, but visually above?
+        // Standard stack: Card 1 covers Card 0's body.
+        // So Z-Index should increase with Index.
+        card.style.zIndex = 10 + index;
 
         // Calculate task counts
         const catTasks = tasks.filter(t => t.category === cat);
@@ -68,9 +124,6 @@ function renderStack() {
         const listEl = card.querySelector(`#list-${cat}`);
         renderTasksForCategory(listEl, catTasks);
     });
-
-    // Adjust container height to fit at least the headers
-    stackContainer.style.height = `${(categories.length * 60) + 400}px`;
 }
 
 function renderTasksForCategory(container, taskList) {
@@ -133,14 +186,15 @@ function toggleTask(id) {
 }
 
 function toggleCard(cat) {
-    // Simple stack accordion logic
-    // For now, let's not overengineer animations. 
-    // Just scrolling to it might be enough in this stack layout.
-    // Or we expand it to full height.
-    // Let's make it simple: clicking header scrolls/focuses that card.
-
-    // In valid prototype, all cards are visible in stack.
+    if (expandedCategory !== cat) {
+        expandedCategory = cat;
+        renderStack();
+    }
 }
+
+// Make explicit for HTML onclick
+window.toggleCard = toggleCard;
+window.toggleTask = toggleTask;
 
 // Adding Tasks
 document.getElementById('nav-add').onclick = () => {
