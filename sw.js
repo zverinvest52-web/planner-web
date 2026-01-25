@@ -1,4 +1,4 @@
-const CACHE_NAME = 'planner-app-v4';
+const CACHE_NAME = 'planner-app-v5';
 const assets = [
     '/',
     '/index.html',
@@ -8,6 +8,7 @@ const assets = [
 ];
 
 self.addEventListener('install', event => {
+    self.skipWaiting(); // Force activate new SW
     event.waitUntil(
         caches.open(CACHE_NAME).then(cache => cache.addAll(assets))
     );
