@@ -7,23 +7,50 @@ function safeParse(key, def) {
         return def;
     }
 }
-// State
-let tasks = safeParse('planner_tasks', []);
+
 const defaultCategories = ['ОБЩИЕ', 'РАБОТА', 'ДОМ', 'ЛИЧНЫЕ'];
-let categories = safeParse('planner_categories', defaultCategories);
+
+// Data Repair Logic
+function validateAndRepairData() {
+    let t = safeParse('planner_tasks', []);
+    let c = safeParse('planner_categories', defaultCategories);
+
+    // Fix Categories
+    if (!Array.isArray(c) || c.length === 0) c = defaultCategories;
+    c = c.filter(item => typeof item === 'string' && item.trim() !== ''); // Remove nulls
+
+    // Fix Tasks
+    if (!Array.isArray(t)) t = [];
+    t = t.filter(task => task && task.id && task.title); // Remove broken tasks
+
+    // Save back fixed data
+    localStorage.setItem('planner_tasks', JSON.stringify(t));
+    localStorage.setItem('planner_categories', JSON.stringify(c));
+
+    return { tasks: t, categories: c };
+}
+
+const data = validateAndRepairData();
+let tasks = data.tasks;
+let categories = data.categories;
+
+// Emergency Reset
+window.resetApp = () => {
+    localStorage.clear();
+    location.reload();
+};
 
 // DOM Elements
 const stackContainer = document.getElementById('category-stack');
 const modalAdd = document.getElementById('modal-add-task');
 const inputDateNative = document.getElementById('input-date-native');
 const labelDate = document.getElementById('label-date');
-let selectedDate = null; // YYYY-MM-DD or null
+let selectedDate = null;
 let selectedCategory = 'ОБЩИЕ';
 let expandedCategory = null;
-// Header height settings
 const HEADER_HEIGHT_PX = 60;
 const HEADER_HEIGHT_REM = 4; // approx
-const TOP_OFFSET_PX = 10; // Small margin inside the stack container
+const TOP_OFFSET_PX = 10;
 
 // Init
 document.addEventListener('DOMContentLoaded', () => {
@@ -45,82 +72,78 @@ function getTodayStr() {
 function save() {
     localStorage.setItem('planner_tasks', JSON.stringify(tasks));
     localStorage.setItem('planner_categories', JSON.stringify(categories));
-    renderStack(); // Full re-render is easiest for this scale
+    renderStack();
 }
 
 // Rendering
 function renderStack() {
-    stackContainer.innerHTML = '';
+    try {
+        if (!stackContainer) return;
+        stackContainer.innerHTML = '';
 
-    const total = categories.length;
-    let currentY = 0;
-
-    // Determine if we have an expanded card
-    // If nothing is expanded, default to first or none?
-    // Let's default to first expand if null
-    if (!expandedCategory && categories.length > 0) expandedCategory = categories[0];
-
-    // Find index of expanded
-    const expIndex = categories.indexOf(expandedCategory);
-
-    categories.forEach((cat, index) => {
-        const card = document.createElement('div');
-        card.className = 'category-card';
-
-        // Stack Logic (Detailed Accordion)
-        const isAfterExpanded = index > expIndex;
-
-        // We use absolute positioning relative to window height to be safe.
-        // Top Stack: standard offset + index * header
-        // Bottom Stack: 100vh - dock(90) - ((total-index) * header)
-
-        if (!isAfterExpanded) {
-            // Stack at TOP
-            const topPos = TOP_OFFSET_PX + (index * HEADER_HEIGHT_PX);
-            card.style.top = `${topPos}px`;
-            // If this IS the expanded card, it needs to be tall.
-            // But height is 100% by css, so it's fine.
-        } else {
-            // Stack at BOTTOM (Push down)
-            const cardsBelow = total - index;
-            // 90px dock + 20px padding
-            const bottomOffset = 110 + (cardsBelow * HEADER_HEIGHT_PX);
-            card.style.top = `calc(100vh - ${bottomOffset}px)`;
+        // Repair expandedCategory if invalid
+        if (!expandedCategory || !categories.includes(expandedCategory)) {
+            expandedCategory = categories[0] || null;
         }
 
-        card.style.zIndex = 50 + index; // Higher index on top
-        // Ensure expanded card is accessible
-        if (expandedCategory === cat) {
-            card.classList.add('expanded');
-        } else {
-            card.classList.remove('expanded');
-        }
+        const expIndex = categories.indexOf(expandedCategory);
+        const total = categories.length;
 
-        // Calculate task counts
-        const catTasks = tasks.filter(t => t.category === cat);
-        const count = catTasks.filter(t => !t.completed).length;
+        categories.forEach((cat, index) => {
+            if (!cat) return;
+            const card = document.createElement('div');
+            card.className = 'category-card';
 
-        card.innerHTML = `
-            <div class="card-header">
-                <h2>${cat}</h2>
-                <div class="counter-badge">${count > 0 ? count : ''}</div>
-            </div>
-            <div class="task-list" id="list-${cat}">
-                <!-- Tasks go here -->
-            </div>
-        `;
+            // Stack Logic (Detailed Accordion)
+            const isAfterExpanded = index > expIndex;
 
-        // Attach Event Listeners explicitly
-        card.querySelector('.card-header').addEventListener('click', () => {
-            toggleCard(cat);
+            if (!isAfterExpanded) {
+                // Stack at TOP
+                const topPos = TOP_OFFSET_PX + (index * HEADER_HEIGHT_PX);
+                card.style.top = `${topPos}px`;
+            } else {
+                // Stack at BOTTOM
+                const cardsBelow = total - index;
+                const bottomOffset = 110 + (cardsBelow * HEADER_HEIGHT_PX);
+                card.style.top = `calc(100vh - ${bottomOffset}px)`;
+            }
+
+            card.style.zIndex = 50 + index;
+            if (expandedCategory === cat) {
+                card.classList.add('expanded');
+            } else {
+                card.classList.remove('expanded');
+            }
+
+            // Calculate task counts
+            const catTasks = tasks.filter(t => t.category === cat);
+            const count = catTasks.filter(t => !t.completed).length;
+
+            card.innerHTML = `
+                <div class="card-header">
+                    <h2>${cat}</h2>
+                    <div class="counter-badge">${count > 0 ? count : ''}</div>
+                </div>
+                <div class="task-list" id="list-${cat}">
+                    <!-- Tasks go here -->
+                </div>
+            `;
+
+            // Attach Event Listeners explicitly
+            card.querySelector('.card-header').addEventListener('click', () => {
+                toggleCard(cat);
+            });
+
+            stackContainer.appendChild(card);
+
+            // Render Tasks for this category
+            const listEl = card.querySelector(`#list-${cat}`);
+            renderTasksForCategory(listEl, catTasks);
         });
-
-        stackContainer.appendChild(card);
-
-        // Render Tasks for this category
-        const listEl = card.querySelector(`#list-${cat}`);
-        renderTasksForCategory(listEl, catTasks);
-    });
+    } catch (e) {
+        console.error(e);
+        alert("CRITICAL RENDER ERROR: " + e.message);
+    }
 }
 
 function renderTasksForCategory(container, taskList) {
