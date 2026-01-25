@@ -19,8 +19,10 @@ const inputDateNative = document.getElementById('input-date-native');
 const labelDate = document.getElementById('label-date');
 let selectedDate = null; // YYYY-MM-DD or null
 let selectedCategory = 'ОБЩИЕ';
-let expandedCategory = null; // which category is currently expanded taking up space
-const HEADER_HEIGHT = 80; // Height of the visible header part of the card
+// Header height settings
+const HEADER_HEIGHT_PX = 60;
+const HEADER_HEIGHT_REM = 4; // approx
+const TOP_OFFSET_PX = 10; // Small margin inside the stack container
 
 // Init
 document.addEventListener('DOMContentLoaded', () => {
@@ -64,52 +66,41 @@ function renderStack() {
         const card = document.createElement('div');
         card.className = 'category-card';
 
-        // Stack Logic (Accordion)
-        // If this card is AT or BEFORE the expanded card:
-        // It stacks from top: index * HEADER_HEIGHT
-        // If this card is AFTER the expanded card:
-        // It pushes to bottom: ScreenHeight - ((total - index) * HEADER_HEIGHT)
-        // BUT we need to be careful about container height.
-        // Let's assume container is flex or 100%.
-
-        // Simpler Logic:
-        // Cards 0..expIndex are stacked at top.
-        // Cards expIndex+1..end are pushed down.
-
-        // Visual calculation:
-        // Container height ~ screen height - header - dock. 
-        // Better to use CSS classes or relative calc?
-        // Let's use calc in JS.
-
+        // Stack Logic (Detailed Accordion)
         const isAfterExpanded = index > expIndex;
 
+        // We use absolute positioning relative to window height to be safe.
+        // Top Stack: standard offset + index * header
+        // Bottom Stack: 100vh - dock(90) - ((total-index) * header)
+
         if (!isAfterExpanded) {
-            // Stack at top
-            card.style.top = `${index * HEADER_HEIGHT}px`;
+            // Stack at TOP
+            const topPos = TOP_OFFSET_PX + (index * HEADER_HEIGHT_PX);
+            card.style.top = `${topPos}px`;
+            // If this IS the expanded card, it needs to be tall.
+            // But height is 100% by css, so it's fine.
         } else {
-            // Stack at bottom (Push down)
-            // We want the expanded card to have free space until the next card starts.
-            // Next card starts at Bottom - (remaining * HEADER_HEIGHT).
-            // Let's use css calc(100% - ...)
-            // HACK for PWA: simple calc.
+            // Stack at BOTTOM (Push down)
             const cardsBelow = total - index;
-            card.style.top = `calc(100% - ${cardsBelow * HEADER_HEIGHT}px)`;
+            // 90px dock + 20px padding
+            const bottomOffset = 110 + (cardsBelow * HEADER_HEIGHT_PX);
+            card.style.top = `calc(100vh - ${bottomOffset}px)`;
         }
 
-        // Z-Index: Lower index = Lower Z? 
-        // Actually for this accordion, top cards cover bottom when collapsed? 
-        // No, visually: Header 0, Header 1, Header 2...
-        // Header 1 is "below" Header 0 in Y, but visually above?
-        // Standard stack: Card 1 covers Card 0's body.
-        // So Z-Index should increase with Index.
-        card.style.zIndex = 10 + index;
+        card.style.zIndex = 50 + index; // Higher index on top
+        // Ensure expanded card is accessible
+        if (expandedCategory === cat) {
+            card.classList.add('expanded');
+        } else {
+            card.classList.remove('expanded');
+        }
 
         // Calculate task counts
         const catTasks = tasks.filter(t => t.category === cat);
         const count = catTasks.filter(t => !t.completed).length;
 
         card.innerHTML = `
-            <div class="card-header" onclick="toggleCard('${cat}')">
+            <div class="card-header">
                 <h2>${cat}</h2>
                 <div class="counter-badge">${count > 0 ? count : ''}</div>
             </div>
@@ -117,6 +108,11 @@ function renderStack() {
                 <!-- Tasks go here -->
             </div>
         `;
+
+        // Attach Event Listeners explicitly
+        card.querySelector('.card-header').addEventListener('click', () => {
+            toggleCard(cat);
+        });
 
         stackContainer.appendChild(card);
 
@@ -155,10 +151,10 @@ function renderTasksForCategory(container, taskList) {
         div.className = `task-item ${isCompleted ? 'completed' : ''} ${isCritical ? 'critical' : ''}`;
 
         div.innerHTML = `
-            <div class="task-checkbox-area" onclick="toggleTask('${task.id}')">
+            <div class="task-checkbox-area">
                 <div class="checkbox-circle"></div>
             </div>
-            <div class="task-content" onclick="toggleTask('${task.id}')">
+            <div class="task-content">
                 <div class="task-title">${task.title}</div>
                 <div class="meta-row">
                     ${isCritical && isOverdue ? '<div class="critical-label">ПРОСРОЧЕНО</div>' : ''}
@@ -168,10 +164,16 @@ function renderTasksForCategory(container, taskList) {
             ${infoText ? `<div class="info-pill">${infoText}</div>` : ''}
         `;
 
-        // Add Delete Swipe/Button logic? For PWA simple button is easier.
-        // Let's add a long-press delete or just a small x for now? 
-        // Or strictly follow design - swipe. 
-        // For simple PWA, let's keep it clickable.
+        // Attach listeners
+        const toggleHandler = (e) => {
+            e.stopPropagation();
+            toggleTask(task.id);
+        };
+        div.querySelector('.task-checkbox-area').addEventListener('click', toggleHandler);
+        // div.querySelector('.task-content').addEventListener('click', toggleHandler); 
+        // Better to make whole item clickable except specific actions if needed?
+        // Let's make the whole item toggle for ease
+        div.addEventListener('click', toggleHandler);
 
         container.appendChild(div);
     });

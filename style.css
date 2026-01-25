@@ -364,6 +364,29 @@ body {
     font-family: inherit;
 }
 
+.input-std {
+    width: 100%;
+    background: #F2F2F7;
+    border: none;
+    padding: 12px;
+    border-radius: 12px;
+    font-size: 16px;
+    outline: none;
+    margin-bottom: 16px;
+    color: var(--text-dark);
+}
+
+.input-transparent {
+    border: none;
+    background: transparent;
+    font-size: 16px;
+    outline: none;
+    color: var(--text-dark);
+    font-family: inherit;
+    width: 100%;
+    text-align: right;
+}
+
 .input-row {
     display: flex;
     align-items: center;
