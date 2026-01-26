@@ -54,12 +54,13 @@ const HEADER_HEIGHT_REM = 3;
 const TOP_OFFSET_PX = 10;
 
 // Init
-updateHeaderDate();
-initSync(); // Start Sync
-renderStack();
-renderStack(); // intentional duplicate removed? no, let's keep one.
-setupEventListeners();
-console.log("App v24.0 loaded successfully");
+document.addEventListener('DOMContentLoaded', () => {
+    updateHeaderDate();
+    initSync(); // Start Sync
+    renderStack();
+    renderStack();
+    setupEventListeners();
+    console.log("App v25.0 loaded successfully");
 });
 
 // Firebase Init
