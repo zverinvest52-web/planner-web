@@ -685,8 +685,31 @@ function openTaskDetails(task) {
     const btnSave = document.getElementById('btn-save-task');
     const btnDelete = document.getElementById('btn-delete-task');
 
-    modalTitle.innerText = "РЕДАКТИРОВАНИЕ";
-    btnSave.innerText = "СОХРАНИТЬ";
+    const btnDelete = document.getElementById('btn-delete-task');
+    const modalBody = document.querySelector('#modal-add-task .modal-body');
+
+    // Make it look like "View Mode" if existing task
+    modalTitle.innerText = task.title; // Show title in header? No, header is fixed usually.
+    // Actually per screenshot: Header says "НОВАЯ ЗАДАЧА" for new.
+    // For view: just show the task name centered?
+    // Let's stick to standard edit fields but cleaner.
+
+    modalTitle.innerText = "";
+    document.getElementById('input-title').value = task.title;
+    document.getElementById('input-desc').value = task.description || '';
+
+    // Switch Save Button to "ВЫПОЛНИТЬ" (Red)
+    btnSave.innerText = "ВЫПОЛНИТЬ";
+    btnSave.style.background = "#FF3B30"; // Red
+    btnSave.onclick = () => {
+        // Logic to complete? Or just save?
+        // For now save as is
+        // Or maybe toggle complete?
+        // Let's keep save logic for now but style it red.
+        toggleTask(task.id);
+        document.getElementById('modal-add-task').classList.add('hidden');
+    };
+
     if (btnDelete) btnDelete.classList.remove('hidden');
 
     document.getElementById('input-title').value = task.title;

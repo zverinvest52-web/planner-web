@@ -152,7 +152,11 @@
     <div class="modal overlay hidden" id="modal-manage-cats">
         <div class="modal-card">
             <div class="modal-header">
-                <h2>КАТЕГОРИИ</h2>
+                <div style="display:flex; flex-direction:column;">
+                    <span
+                        style="font-size:12px; font-weight:600; color:#8E8E93; letter-spacing:1px; text-transform:uppercase;">ПАПКИ</span>
+                    <h2 style="font-size:28px; line-height:1.1; margin:0; color:#000;">Управление<br>категориями</h2>
+                </div>
                 <button class="close-btn" id="close-manage-cats"><i class="fas fa-times"></i></button>
             </div>
             <div class="modal-body">
@@ -182,10 +186,10 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
     <!-- Scripts -->
-    <script src="app.js?v=30"></script>
+    <script src="app.js?v=31"></script>
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js?v=30').then(reg => {
+            navigator.serviceWorker.register('sw.js?v=31').then(reg => {
                 reg.update();
             });
         }
