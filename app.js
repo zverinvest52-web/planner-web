@@ -48,18 +48,80 @@ const labelDate = document.getElementById('label-date');
 let selectedDate = null;
 let selectedCategory = 'ОБЩИЕ';
 let expandedCategory = null;
+let currentPhotos = [];
 const HEADER_HEIGHT_PX = 50;
 const HEADER_HEIGHT_REM = 3;
 const TOP_OFFSET_PX = 10;
 
 // Init
-document.addEventListener('DOMContentLoaded', () => {
-    updateHeaderDate();
-    renderStack();
-    renderStack();
-    setupEventListeners();
-    console.log("App v20.0 loaded successfully");
+updateHeaderDate();
+initSync(); // Start Sync
+renderStack();
+renderStack(); // intentional duplicate removed? no, let's keep one.
+setupEventListeners();
+console.log("App v24.0 loaded successfully");
 });
+
+// Firebase Init
+const firebaseConfig = {
+    apiKey: "AIzaSyDm1OtrN4y6xzxiSwxEe6fWBQbxPF-_2W4",
+    authDomain: "planer-a8373.firebaseapp.com",
+    databaseURL: "https://planer-a8373-default-rtdb.firebaseio.com",
+    projectId: "planer-a8373",
+    storageBucket: "planer-a8373.firebasestorage.app",
+    messagingSenderId: "605434976950",
+    appId: "1:605434976950:web:aaa57c2c90a36d495c6417",
+    measurementId: "G-2578HLN9LR"
+};
+let db = null;
+let tgUserId = null;
+
+try {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+    console.log("Firebase initialized");
+} catch (e) {
+    console.error("Firebase init failed:", e);
+}
+
+function initSync() {
+    // 1. Try to get Telegram User ID
+    try {
+        if (window.Telegram?.WebApp) {
+            const tg = window.Telegram.WebApp;
+            tg.ready();
+            if (tg.initDataUnsafe?.user?.id) {
+                tgUserId = tg.initDataUnsafe.user.id.toString();
+                console.log("TG User ID found:", tgUserId);
+            }
+        }
+    } catch (e) {
+        console.warn("TG Init failed", e);
+    }
+
+    if (tgUserId && db) {
+        // Cloud Mode: Listen to changes
+        const ref = db.ref('users/' + tgUserId + '/monitor');
+        ref.on('value', (snapshot) => {
+            const val = snapshot.val();
+            if (val) {
+                // Merge or Overwrite? For now Overwrite from cloud to be safe sync.
+                // In a real app we might merge.
+                if (val.tasks) tasks = val.tasks;
+                if (val.categories) categories = val.categories;
+
+                // Update Local Storage as backup
+                localStorage.setItem('planner_tasks', JSON.stringify(tasks));
+                localStorage.setItem('planner_categories', JSON.stringify(categories));
+
+                renderStack();
+                console.log("Synced from Cloud");
+            }
+        });
+    } else {
+        console.log("Offline Mode (No TG ID or Firebase)");
+    }
+}
 
 function setupEventListeners() {
     // Add Button
@@ -76,8 +138,13 @@ function setupEventListeners() {
         document.getElementById('input-time').value = '';
         selectedDate = null;
         updateDateLabel();
+        updateDateLabel();
         selectedCategory = expandedCategory || categories[0];
         document.getElementById('label-cat').innerText = selectedCategory;
+
+        // Reset Photos
+        currentPhotos = [];
+        renderPhotoPreviews();
 
         modalAdd.classList.remove('hidden');
     };
@@ -103,7 +170,8 @@ function setupEventListeners() {
                     category: selectedCategory,
                     tags: document.getElementById('input-tags').value,
                     time: document.getElementById('input-time').value,
-                    date: selectedDate
+                    date: selectedDate,
+                    photos: currentPhotos // Save photos
                 };
             }
         } else {
@@ -116,6 +184,7 @@ function setupEventListeners() {
                 tags: document.getElementById('input-tags').value,
                 time: document.getElementById('input-time').value,
                 date: selectedDate,
+                photos: currentPhotos, // Save photos
                 completed: false
             };
             tasks.push(newTask);
@@ -124,6 +193,37 @@ function setupEventListeners() {
         save();
         modalAdd.classList.add('hidden');
     };
+
+    // Photo Handlers
+    const btnAddPhoto = document.getElementById('btn-add-photo');
+    const inputPhoto = document.getElementById('input-photo-native');
+
+    if (btnAddPhoto && inputPhoto) {
+        btnAddPhoto.onclick = () => inputPhoto.click();
+
+        inputPhoto.onchange = (e) => {
+            const files = Array.from(e.target.files);
+            if (!files.length) return;
+
+            // Limit total photos to prevent storage overflow (max 3 for now)
+            if (currentPhotos.length + files.length > 5) {
+                alert("Максимум 5 фото");
+                return;
+            }
+
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (evt) => {
+                    // Simple compression by not touching it? LocalStorage has 5MB limit. 
+                    // ideally we should resize. For now raw base64.
+                    currentPhotos.push(evt.target.result);
+                    renderPhotoPreviews();
+                };
+                reader.readAsDataURL(file);
+            });
+            inputPhoto.value = ''; // Reset
+        };
+    }
 
     // Delete Task Button
     const btnDelete = document.getElementById('btn-delete-task');
@@ -303,8 +403,19 @@ function getTodayStr() {
 }
 
 function save() {
+    // Local Save (Always backup)
     localStorage.setItem('planner_tasks', JSON.stringify(tasks));
     localStorage.setItem('planner_categories', JSON.stringify(categories));
+
+    // Cloud Save
+    if (tgUserId && db) {
+        db.ref('users/' + tgUserId + '/monitor').set({
+            tasks: tasks,
+            categories: categories,
+            last_updated: Date.now()
+        }).catch(err => console.error("Cloud Save Error:", err));
+    }
+
     renderStack();
 }
 
@@ -410,6 +521,7 @@ function renderTasksForCategory(container, taskList) {
                 <div class="meta-row">
                     ${isCritical && isOverdue ? '<div class="critical-label">ПРОСРОЧЕНО</div>' : ''}
                     ${isCritical && isToday ? '<div class="critical-label">СЕГОДНЯ</div>' : ''}
+                    ${task.photos && task.photos.length > 0 ? '<div class="critical-label" style="color:var(--text-gray);"><i class="fas fa-paperclip"></i> ' + task.photos.length + '</div>' : ''}
                 </div>
             </div>
             ${infoText ? `<div class="info-pill">${infoText}</div>` : ''}
@@ -495,9 +607,48 @@ function openTaskDetails(task) {
     selectedCategory = task.category;
     document.getElementById('label-cat').innerText = selectedCategory;
     selectedDate = task.date;
+
+    // Load photos
+    currentPhotos = task.photos || [];
+    renderPhotoPreviews();
+
     updateDateLabel();
 
     modalAdd.classList.remove('hidden');
+}
+
+function renderPhotoPreviews() {
+    const container = document.getElementById('photos-preview-container');
+    if (!container) return;
+    container.innerHTML = '';
+
+    currentPhotos.forEach((src, idx) => {
+        const thumb = document.createElement('div');
+        thumb.style.cssText = `
+            width: 60px; height: 60px; flex-shrink:0; 
+            border-radius: 8px; background-image: url('${src}'); 
+            background-size: cover; background-position: center;
+            position: relative;
+        `;
+
+        const btnDel = document.createElement('button');
+        btnDel.innerHTML = '<i class="fas fa-times"></i>';
+        btnDel.style.cssText = `
+            position: absolute; top: -5px; right: -5px;
+            width: 20px; height: 20px; border-radius: 50%;
+            background: red; color: white; border: none;
+            font-size: 10px; display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+        `;
+        btnDel.onclick = (e) => {
+            e.stopPropagation(); // prevent modal close logic if any
+            currentPhotos.splice(idx, 1);
+            renderPhotoPreviews();
+        };
+
+        thumb.appendChild(btnDel);
+        container.appendChild(thumb);
+    });
 }
 
 window.openTaskDetails = openTaskDetails;

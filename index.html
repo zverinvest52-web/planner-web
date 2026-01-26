@@ -15,6 +15,8 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body class="light-theme">
@@ -32,7 +34,7 @@
         <header class="main-header">
             <div class="header-row">
                 <div class="date-header">
-                    <div class="subtitle">ПЛАНЕР <span style="font-size:10px; opacity:0.5;">v22.0</span></div>
+                    <div class="subtitle">ПЛАНЕР <span style="font-size:10px; opacity:0.5;">v24.0 (Cloud)</span></div>
                     <h1 id="header-date">Сегодня</h1>
                 </div>
                 <button class="btn-icon-header" id="btn-search-toggle">
@@ -110,6 +112,18 @@
                     <input type="time" id="input-time" class="input-transparent">
                 </div>
 
+                <!-- Photos Section -->
+                <div class="input-row" style="border:none; padding-top:0;">
+                    <button class="btn-text" id="btn-add-photo" style="display:flex; align-items:center; gap:8px;">
+                        <i class="fas fa-paperclip accent-icon small"></i>
+                        <span class="text-gray" style="font-size:14px;">Прикрепить фото</span>
+                    </button>
+                    <input type="file" id="input-photo-native" multiple accept="image/*" class="hidden">
+                </div>
+                <!-- Photos Preview -->
+                <div id="photos-preview-container"
+                    style="display:flex; gap:8px; overflow-x:auto; padding-bottom:8px; margin-bottom:12px;"></div>
+
 
                 <div class="modal-buttons-row" style="display:flex; gap:10px; margin-top:20px;">
                     <button class="btn-secondary hidden" id="btn-delete-task"
@@ -148,6 +162,10 @@
             </div>
         </div>
     </div>
+
+    <!-- Firebase SDK (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
     <!-- Scripts -->
     <script src="app.js"></script>
