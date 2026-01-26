@@ -361,24 +361,34 @@ function renderManageCats() {
     if (!list) return;
     list.innerHTML = '';
 
+    // Add instruction text
+    const hint = document.createElement('div');
+    hint.innerText = "Удерживайте и тяните для сортировки";
+    hint.style.cssText = "font-size: 12px; color: #8E8E93; margin-bottom: 10px; text-align: center;";
+    list.appendChild(hint);
+
     categories.forEach((cat, idx) => {
         const row = document.createElement('div');
-        row.className = 'input-row';
-        row.style.justifyContent = 'space-between';
+        row.className = 'cat-item-row';
 
         // Enable Drag
         row.draggable = true;
         row.dataset.index = idx;
 
-        // Visual content
+        // Visual layout: [Trash] [Edit] [Name] ... [Handle]
         row.innerHTML = `
-            <div style="display:flex; align-items:center; gap:12px;">
-                <i class="fas fa-bars" style="color:#ccc; cursor:grab;"></i>
-                <span style="font-weight:500; font-size:16px;">${cat}</span>
+            <div class="cat-item-left">
+                <button class="cat-action-btn" onclick="deleteCat('${cat}')">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+                <button class="cat-action-btn" onclick="renameCatPrompt('${cat}')">
+                    <i class="fas fa-pen"></i>
+                </button>
+                <div class="cat-name">${cat}</div>
             </div>
-            <button class="btn-icon-small" onclick="deleteCat('${cat}')">
-                <i class="fas fa-trash"></i>
-            </button>
+            <div class="cat-drag-handle">
+                <i class="fas fa-bars"></i>
+            </div>
         `;
 
         // Desktop Drag Events
@@ -395,6 +405,22 @@ function renderManageCats() {
         list.appendChild(row);
     });
 }
+
+// Helper for rename logic
+window.renameCatPrompt = (oldName) => {
+    const newName = prompt("Переименовать категорию:", oldName);
+    if (newName && newName !== oldName && !categories.includes(newName)) {
+        const idx = categories.indexOf(oldName);
+        if (idx > -1) {
+            categories[idx] = newName;
+            // Update tasks
+            tasks.forEach(t => { if (t.category === oldName) t.category = newName; });
+            save();
+            renderManageCats();
+            renderStack();
+        }
+    }
+};
 
 // --- DRAG & DROP LOGIC ---
 let dragSrcEl = null;
@@ -685,7 +711,6 @@ function openTaskDetails(task) {
     const btnSave = document.getElementById('btn-save-task');
     const btnDelete = document.getElementById('btn-delete-task');
 
-    // const btnDelete = document.getElementById('btn-delete-task'); // Removed duplicate
     const modalBody = document.querySelector('#modal-add-task .modal-body');
 
     // Make it look like "View Mode" if existing task
