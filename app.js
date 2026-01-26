@@ -685,7 +685,7 @@ function openTaskDetails(task) {
     const btnSave = document.getElementById('btn-save-task');
     const btnDelete = document.getElementById('btn-delete-task');
 
-    const btnDelete = document.getElementById('btn-delete-task');
+    // const btnDelete = document.getElementById('btn-delete-task'); // Removed duplicate
     const modalBody = document.querySelector('#modal-add-task .modal-body');
 
     // Make it look like "View Mode" if existing task
