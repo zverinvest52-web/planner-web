@@ -56,8 +56,9 @@ const TOP_OFFSET_PX = 10;
 document.addEventListener('DOMContentLoaded', () => {
     updateHeaderDate();
     renderStack();
+    renderStack();
     setupEventListeners();
-    console.log("App v5.2 loaded successfully");
+    console.log("App v20.0 loaded successfully");
 });
 
 function setupEventListeners() {
