@@ -11,8 +11,7 @@
     --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.08);
     --shadow-red: 0 4px 12px rgba(255, 59, 48, 0.3);
 
-    --header-height: 140px;
-    /* Increased for search bar */
+    --header-height: 90px;
     --dock-height: 90px;
     --card-radius: 32px;
 }
@@ -29,7 +28,6 @@ body {
     background-color: var(--bg-light);
     color: var(--text-dark);
     height: 100dvh;
-    /* Dynamic viewport */
     width: 100vw;
     overflow: hidden;
 }
@@ -41,19 +39,40 @@ body {
     flex-direction: column;
     position: relative;
     padding-top: 0;
-    /* Handled by header */
 }
 
 /* Header */
 .main-header {
-    padding: 20px 24px 0 24px;
-    /* Added top padding */
-    height: var(--header-height);
+    padding: 0 24px;
+    height: auto;
+    min-height: var(--header-height);
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
-    /* Stack from top */
+    justify-content: center;
     z-index: 200;
+    background: var(--bg-light);
+}
+
+.header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding-top: 10px;
+}
+
+.btn-icon-header {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #EFEFF1;
+    border: none;
+    color: var(--text-dark);
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
 }
 
 .search-bar {
@@ -63,7 +82,12 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-bottom: 16px;
+    margin-top: 10px;
+    margin-bottom: 5px;
+}
+
+.search-bar.hidden {
+    display: none;
 }
 
 .search-bar i {
