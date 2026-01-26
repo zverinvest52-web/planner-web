@@ -216,11 +216,26 @@ function setupEventListeners() {
     // Search Toggle
     const btnSearch = document.getElementById('btn-search-toggle');
     if (btnSearch) {
-        btnSearch.onclick = () => {
+        btnSearch.onclick = (e) => {
+            e.stopPropagation(); // Prevent document click from closing immediately
             const sb = document.getElementById('search-bar-container');
             sb.classList.toggle('hidden');
+            if (!sb.classList.contains('hidden')) {
+                document.getElementById('global-search').focus();
+            }
         };
     }
+
+    // Close search on click outside
+    document.addEventListener('click', (e) => {
+        const sb = document.getElementById('search-bar-container');
+        const btn = document.getElementById('btn-search-toggle');
+        if (sb && !sb.classList.contains('hidden')) {
+            if (!sb.contains(e.target) && !btn.contains(e.target)) {
+                sb.classList.add('hidden');
+            }
+        }
+    });
 }
 
 function renderManageCats() {
@@ -322,8 +337,8 @@ function renderStack() {
             } else {
                 // Stack at BOTTOM
                 const cardsBelow = total - index;
-                // Boost overlap safe zone - increased to 180px
-                const bottomOffset = 180 + (cardsBelow * HEADER_HEIGHT_PX);
+                // Boost overlap safe zone - increased to 220px (User Request for strict limit)
+                const bottomOffset = 220 + (cardsBelow * HEADER_HEIGHT_PX);
                 card.style.top = `calc(100dvh - ${bottomOffset}px)`;
             }
 
