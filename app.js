@@ -97,10 +97,15 @@ function initSync() {
             }
         }
     } catch (e) {
+    } catch (e) {
         console.warn("TG Init failed", e);
     }
 
+    const statusEl = document.getElementById('cloud-status');
+
     if (tgUserId && db) {
+        if (statusEl) statusEl.innerHTML = `<i class="fas fa-circle" style="color:#34C759;"></i> Облако: ${tgUserId}`;
+
         // Cloud Mode: Listen to changes
         const ref = db.ref('users/' + tgUserId + '/monitor');
 
@@ -130,6 +135,7 @@ function initSync() {
             }
         });
     } else {
+        if (statusEl) statusEl.innerHTML = `<i class="fas fa-circle" style="color:#FF3B30;"></i> Оффлайн (Откройте в TG)`;
         console.log("Offline Mode (No TG ID or Firebase)");
     }
 }

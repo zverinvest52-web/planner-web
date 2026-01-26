@@ -1,4 +1,4 @@
-const CACHE_NAME = 'planner-app-v26';
+const CACHE_NAME = 'planner-app-v27';
 const assets = [
     '/',
     '/index.html',
