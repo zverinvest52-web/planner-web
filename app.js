@@ -97,7 +97,6 @@ function initSync() {
             }
         }
     } catch (e) {
-    } catch (e) {
         console.warn("TG Init failed", e);
     }
 
