@@ -48,7 +48,6 @@ const labelDate = document.getElementById('label-date');
 let selectedDate = null;
 let selectedCategory = 'ОБЩИЕ';
 let expandedCategory = null;
-let expandedCategory = null;
 const HEADER_HEIGHT_PX = 50;
 const HEADER_HEIGHT_REM = 3;
 const TOP_OFFSET_PX = 10;
