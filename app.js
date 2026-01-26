@@ -48,8 +48,8 @@ const labelDate = document.getElementById('label-date');
 let selectedDate = null;
 let selectedCategory = 'ОБЩИЕ';
 let expandedCategory = null;
-const HEADER_HEIGHT_PX = 80; // Matched with CSS
-const HEADER_HEIGHT_REM = 5;
+const HEADER_HEIGHT_PX = 50; // Smaller as requested
+const HEADER_HEIGHT_REM = 3;
 const TOP_OFFSET_PX = 10;
 
 // Init
@@ -218,33 +218,52 @@ function renderManageCats() {
     if (!list) return;
     list.innerHTML = '';
 
-    categories.forEach(cat => {
+    categories.forEach((cat, idx) => {
         const row = document.createElement('div');
         row.className = 'input-row';
         row.style.justifyContent = 'space-between';
 
-        // Prevent deleting non-deletable if needed? Let's generic everything.
-        // Maybe lock 'GENERAL'?
-        const isLocked = cat === 'ОБЩИЕ';
+        // Sorting controls
+        const isFirst = idx === 0;
+        const isLast = idx === categories.length - 1;
 
         row.innerHTML = `
-            <span style="font-weight:500;">${cat}</span>
-            ${!isLocked ? `<button class="btn-text accent" style="color:#FF3B30;" onclick="deleteCat('${cat}')">Удалить</button>` : ''}
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div style="display:flex; flex-direction:column; gap:2px;">
+                    ${!isFirst ? `<i class="fas fa-chevron-up clickable" style="font-size:12px; color:#007AFF; padding:4px;" onclick="moveCat(${idx}, -1)"></i>` : ''}
+                    ${!isLast ? `<i class="fas fa-chevron-down clickable" style="font-size:12px; color:#007AFF; padding:4px;" onclick="moveCat(${idx}, 1)"></i>` : ''}
+                </div>
+                <span style="font-weight:500;">${cat}</span>
+            </div>
+            <button class="btn-text accent" style="color:#FF3B30;" onclick="deleteCat('${cat}')">Удалить</button>
         `;
         list.appendChild(row);
     });
 }
 
+window.moveCat = (index, dir) => {
+    const newIndex = index + dir;
+    if (newIndex < 0 || newIndex >= categories.length) return;
+
+    // Swap
+    const temp = categories[index];
+    categories[index] = categories[newIndex];
+    categories[newIndex] = temp;
+
+    save();
+    renderManageCats();
+    renderStack();
+};
+
 window.deleteCat = (cat) => {
-    if (confirm('Удалить папку "' + cat + '"? Задачи останутся, но будут без папки (перейдут в Общие).')) {
+    if (confirm('Удалить папку "' + cat + '" и ВСЕ задачи в ней? Это действие нельзя отменить.')) {
         categories = categories.filter(c => c !== cat);
-        // Move tasks to General
-        tasks.forEach(t => {
-            if (t.category === cat) t.category = 'ОБЩИЕ';
-        });
+        // Delete tasks permanently
+        tasks = tasks.filter(t => t.category !== cat);
+
         save();
         renderManageCats();
-        renderStack(); // Update background
+        renderStack();
     }
 };
 
@@ -293,7 +312,8 @@ function renderStack() {
             } else {
                 // Stack at BOTTOM
                 const cardsBelow = total - index;
-                const bottomOffset = 110 + (cardsBelow * HEADER_HEIGHT_PX);
+                // Boost overlap safe zone to 140px
+                const bottomOffset = 140 + (cardsBelow * HEADER_HEIGHT_PX);
                 card.style.top = `calc(100vh - ${bottomOffset}px)`;
             }
 

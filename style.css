@@ -115,17 +115,18 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 32px;
+    padding: 0 24px;
     cursor: pointer;
-    height: 80px;
-    /* Fixed height to match JS logic */
+    height: 50px;
+    /* Smaller headers request */
     background: transparent;
     user-select: none;
     /* Prevent text selection */
 }
 
 .card-header h2 {
-    font-size: 20px;
+    font-size: 16px;
+    /* Smaller font */
     font-weight: 700;
     letter-spacing: 1px;
     text-transform: uppercase;
