@@ -103,6 +103,16 @@ function initSync() {
     if (tgUserId && db) {
         // Cloud Mode: Listen to changes
         const ref = db.ref('users/' + tgUserId + '/monitor');
+
+        // Initial Check: If Cloud is empty, push Local
+        ref.once('value').then(snapshot => {
+            const val = snapshot.val();
+            if (!val && tasks.length > 0) {
+                console.log("Cloud empty, pushing local data...");
+                save(); // Force push
+            }
+        });
+
         ref.on('value', (snapshot) => {
             const val = snapshot.val();
             if (val) {
