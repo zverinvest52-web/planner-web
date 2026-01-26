@@ -48,7 +48,8 @@ const labelDate = document.getElementById('label-date');
 let selectedDate = null;
 let selectedCategory = 'ОБЩИЕ';
 let expandedCategory = null;
-const HEADER_HEIGHT_PX = 50; // Smaller as requested
+let expandedCategory = null;
+const HEADER_HEIGHT_PX = 50;
 const HEADER_HEIGHT_REM = 3;
 const TOP_OFFSET_PX = 10;
 
@@ -211,6 +212,15 @@ function setupEventListeners() {
             }
         };
     }
+
+    // Search Toggle
+    const btnSearch = document.getElementById('btn-search-toggle');
+    if (btnSearch) {
+        btnSearch.onclick = () => {
+            const sb = document.getElementById('search-bar-container');
+            sb.classList.toggle('hidden');
+        };
+    }
 }
 
 function renderManageCats() {
@@ -312,12 +322,12 @@ function renderStack() {
             } else {
                 // Stack at BOTTOM
                 const cardsBelow = total - index;
-                // Boost overlap safe zone to 140px
-                const bottomOffset = 140 + (cardsBelow * HEADER_HEIGHT_PX);
-                card.style.top = `calc(100vh - ${bottomOffset}px)`;
+                // Boost overlap safe zone - increased to 180px
+                const bottomOffset = 180 + (cardsBelow * HEADER_HEIGHT_PX);
+                card.style.top = `calc(100dvh - ${bottomOffset}px)`;
             }
 
-            card.style.zIndex = 50 + index;
+            card.style.zIndex = 10 + index; // Lower base index
 
             if (expandedCategory === cat) {
                 card.classList.add('expanded');
