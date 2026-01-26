@@ -103,7 +103,8 @@ function initSync() {
     const statusEl = document.getElementById('cloud-status');
 
     if (tgUserId && db) {
-        if (statusEl) statusEl.innerHTML = `<i class="fas fa-circle" style="color:#34C759;"></i> Облако: ${tgUserId}`;
+        // Minified Status: Green Dot
+        if (statusEl) statusEl.innerHTML = `<i class="fas fa-circle" style="color:#34C759; font-size:6px;"></i>`;
 
         // Cloud Mode: Listen to changes
         const ref = db.ref('users/' + tgUserId + '/monitor');
@@ -134,7 +135,8 @@ function initSync() {
             }
         });
     } else {
-        if (statusEl) statusEl.innerHTML = `<i class="fas fa-circle" style="color:#FF3B30;"></i> Оффлайн (Откройте в TG)`;
+        // Offline Status: Red Dot
+        if (statusEl) statusEl.innerHTML = `<i class="fas fa-circle" style="color:#FF3B30; font-size:6px;"></i>`;
         console.log("Offline Mode (No TG ID or Firebase)");
     }
 }
@@ -364,37 +366,109 @@ function renderManageCats() {
         row.className = 'input-row';
         row.style.justifyContent = 'space-between';
 
-        // Sorting controls
-        const isFirst = idx === 0;
-        const isLast = idx === categories.length - 1;
+        // Enable Drag
+        row.draggable = true;
+        row.dataset.index = idx;
 
+        // Visual content
         row.innerHTML = `
-            <div style="display:flex; align-items:center; gap:10px;">
-                <div style="display:flex; flex-direction:column; gap:2px;">
-                    ${!isFirst ? `<i class="fas fa-chevron-up clickable" style="font-size:12px; color:#007AFF; padding:4px;" onclick="moveCat(${idx}, -1)"></i>` : ''}
-                    ${!isLast ? `<i class="fas fa-chevron-down clickable" style="font-size:12px; color:#007AFF; padding:4px;" onclick="moveCat(${idx}, 1)"></i>` : ''}
-                </div>
-                <span style="font-weight:500;">${cat}</span>
+            <div style="display:flex; align-items:center; gap:12px;">
+                <i class="fas fa-bars" style="color:#ccc; cursor:grab;"></i>
+                <span style="font-weight:500; font-size:16px;">${cat}</span>
             </div>
-            <button class="btn-text accent" style="color:#FF3B30;" onclick="deleteCat('${cat}')">Удалить</button>
+            <button class="btn-icon-small" onclick="deleteCat('${cat}')">
+                <i class="fas fa-trash"></i>
+            </button>
         `;
+
+        // Desktop Drag Events
+        row.addEventListener('dragstart', handleDragStart);
+        row.addEventListener('dragover', handleDragOver);
+        row.addEventListener('drop', handleDrop);
+        row.addEventListener('dragend', handleDragEnd);
+
+        // Mobile Touch Events
+        row.addEventListener('touchstart', handleTouchStart, { passive: false });
+        row.addEventListener('touchmove', handleTouchMove, { passive: false });
+        row.addEventListener('touchend', handleTouchEnd);
+
         list.appendChild(row);
     });
 }
 
-window.moveCat = (index, dir) => {
-    const newIndex = index + dir;
-    if (newIndex < 0 || newIndex >= categories.length) return;
+// --- DRAG & DROP LOGIC ---
+let dragSrcEl = null;
 
-    // Swap
-    const temp = categories[index];
-    categories[index] = categories[newIndex];
-    categories[newIndex] = temp;
+function handleDragStart(e) {
+    dragSrcEl = this;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', this.innerHTML);
+    this.classList.add('dragging');
+}
 
+function handleDragOver(e) {
+    if (e.preventDefault) e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    return false;
+}
+
+function handleDrop(e) {
+    if (e.stopPropagation) e.stopPropagation();
+    if (dragSrcEl !== this) {
+        const srcIdx = parseInt(dragSrcEl.dataset.index);
+        const targetIdx = parseInt(this.dataset.index);
+        moveCatItem(srcIdx, targetIdx);
+    }
+    return false;
+}
+
+function handleDragEnd(e) {
+    this.classList.remove('dragging');
+}
+
+// Touch Logic
+let touchSrcIdx = null;
+
+function handleTouchStart(e) {
+    touchSrcIdx = parseInt(this.dataset.index);
+    this.classList.add('dragging');
+}
+
+function handleTouchMove(e) {
+    e.preventDefault(); // Prevent scrolling while dragging
+    const touch = e.touches[0];
+    const target = document.elementFromPoint(touch.clientX, touch.clientY);
+    const row = target ? target.closest('.input-row') : null;
+
+    // Optional: Add visual feedback for "hover"
+}
+
+function handleTouchEnd(e) {
+    this.classList.remove('dragging');
+    const touch = e.changedTouches[0];
+    const target = document.elementFromPoint(touch.clientX, touch.clientY);
+    const targetRow = target ? target.closest('.input-row') : null;
+
+    if (targetRow && touchSrcIdx !== null) {
+        const targetIdx = parseInt(targetRow.dataset.index);
+        if (!isNaN(targetIdx) && targetIdx !== touchSrcIdx) {
+            moveCatItem(touchSrcIdx, targetIdx);
+        }
+    }
+    touchSrcIdx = null;
+}
+
+function moveCatItem(fromIndex, toIndex) {
+    const item = categories[fromIndex];
+    categories.splice(fromIndex, 1);
+    categories.splice(toIndex, 0, item);
     save();
     renderManageCats();
     renderStack();
-};
+}
+
+// Old moveCat removed in favor of moveCatItem
+// window.moveCat = ...
 
 window.deleteCat = (cat) => {
     if (confirm('Удалить папку "' + cat + '" и ВСЕ задачи в ней? Это действие нельзя отменить.')) {
