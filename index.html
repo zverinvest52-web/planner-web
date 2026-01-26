@@ -12,20 +12,29 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=30">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="style.css">
 </head>
 
 <body class="light-theme">
 
     <!-- Error Handler for Debugging -->
     <script>
-        window.onerror = function (msg, url, line) {
-            alert("Ошибка приложения:\n" + msg + "\nСтрока: " + line + "\nПопробуйте очистить кэш.");
-        };
+        // Force Version Check
+        const CURRENT_VERSION = '30.0';
+        if (localStorage.getItem('app_version') !== CURRENT_VERSION) {
+            localStorage.setItem('app_version', CURRENT_VERSION);
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(function (registrations) {
+                    for (let registration of registrations) {
+                        registration.unregister();
+                    }
+                    window.location.reload(true);
+                });
+            }
+        }
     </script>
     <!-- Main Screen -->
     <div id="app" class="app-container">
@@ -173,10 +182,12 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
     <!-- Scripts -->
-    <script src="app.js"></script>
+    <script src="app.js?v=30"></script>
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js');
+            navigator.serviceWorker.register('sw.js?v=30').then(reg => {
+                reg.update();
+            });
         }
     </script>
 </body>
