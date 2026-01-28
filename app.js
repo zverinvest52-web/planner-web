@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initSync(); // Start Sync
     switchTab('home'); // Force correct view state
     renderStack();
-    console.log("App v40.0 loaded successfully");
+    console.log("App v41.0 loaded successfully");
 });
 
 // Firebase Init
@@ -453,13 +453,35 @@ function handleTouchMove(e) {
     const touch = e.touches[0];
     const deltaY = touch.clientY - touchStartY;
 
-    this.style.transform = `translateY(${deltaY}px)`;
+    this.style.transform = `translateY(${deltaY}px) scale(1.03)`;
+
+    // Show preview: highlight where item will land
+    const allRows = document.querySelectorAll('.cat-item-row');
+    const hoverTarget = document.elementFromPoint(touch.clientX, touch.clientY);
+    const targetRow = hoverTarget ? hoverTarget.closest('.cat-item-row') : null;
+
+    allRows.forEach(row => {
+        row.classList.remove('drag-over', 'drag-above');
+        if (targetRow && row === targetRow && row !== this) {
+            const targetIdx = parseInt(targetRow.dataset.index);
+            if (targetIdx > touchSrcIdx) {
+                row.classList.add('drag-over');
+            } else {
+                row.classList.add('drag-above');
+            }
+        }
+    });
 }
 
 function handleTouchEnd(e) {
     this.classList.remove('dragging');
     this.style.transform = ''; // Reset
     this.style.transition = ''; // Restore
+
+    // Remove all drag indicators
+    document.querySelectorAll('.cat-item-row').forEach(row => {
+        row.classList.remove('drag-over', 'drag-above');
+    });
 
     const touch = e.changedTouches[0];
     const target = document.elementFromPoint(touch.clientX, touch.clientY);

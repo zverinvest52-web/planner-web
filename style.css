@@ -632,38 +632,68 @@ body {
 #view-cats {
     display: flex;
     flex-direction: column;
-    height: calc(100vh - var(--header-height) - var(--dock-height));
-    padding-bottom: 20px;
+    padding: 0 20px;
+    padding-bottom: 120px;
+    /* Extra space for dock + button */
+    overflow-y: auto;
+}
+
+#view-cats .view-header {
+    margin-bottom: 8px;
+}
+
+#view-cats .view-header .subtitle {
+    color: var(--accent-red);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+}
+
+#view-cats .view-header h2 {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+#view-cats .hint-text {
+    color: #8E8E93;
+    font-size: 13px;
+    margin-bottom: 16px;
 }
 
 #view-cats .btn-primary {
-    margin-top: auto;
+    position: fixed;
+    bottom: 100px;
+    left: 20px;
+    right: 20px;
+    z-index: 100;
 }
 
-/* ===== BOTTOM DOCK FIX ===== */
+/* ===== BOTTOM DOCK - NARROWER ===== */
 .bottom-dock {
     position: fixed;
-    bottom: 30px;
+    bottom: 24px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba(255, 255, 255, 0.98);
     backdrop-filter: blur(10px);
-    padding: 12px 32px;
-    border-radius: 40px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+    padding: 8px 24px;
+    border-radius: 32px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 48px;
+    gap: 32px;
     z-index: 9999;
 }
 
 .dock-btn {
-    width: 48px;
-    height: 48px;
+    width: 44px;
+    height: 44px;
     border: none;
     background: transparent;
-    color: #C7C7CC;
+    color: #AEAEB2;
     font-size: 22px;
     display: flex;
     align-items: center;
@@ -676,16 +706,37 @@ body {
 }
 
 .dock-fab {
-    width: 56px;
-    height: 56px;
+    width: 52px;
+    height: 52px;
     background: var(--accent-red);
     border-radius: 50%;
     border: none;
     color: white;
-    font-size: 24px;
+    font-size: 22px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 12px rgba(255, 59, 48, 0.4);
+    box-shadow: 0 4px 12px rgba(255, 59, 48, 0.35);
     cursor: pointer;
+}
+
+/* ===== DRAG & DROP ANIMATIONS ===== */
+.cat-item-row {
+    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.cat-item-row.dragging {
+    opacity: 0.9;
+    transform: scale(1.03);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    z-index: 100;
+    background: #fff;
+}
+
+.cat-item-row.drag-over {
+    transform: translateY(8px);
+}
+
+.cat-item-row.drag-above {
+    transform: translateY(-8px);
 }
