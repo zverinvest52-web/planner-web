@@ -100,11 +100,13 @@ function initSync() {
         console.warn("TG Init failed", e);
     }
 
-    const statusEl = document.getElementById('cloud-status');
-
     if (tgUserId && db) {
-        // Minified Status: Green Dot
-        if (statusEl) statusEl.innerHTML = `<i class="fas fa-circle" style="color:#34C759; font-size:6px;"></i>`;
+        // Presence Logic
+        db.ref('.info/connected').on('value', (snap) => {
+            if (window.updateOnlineStatus) {
+                window.updateOnlineStatus(snap.val() === true);
+            }
+        });
 
         // Cloud Mode: Listen to changes
         const ref = db.ref('users/' + tgUserId + '/monitor');
@@ -122,22 +124,22 @@ function initSync() {
             const val = snapshot.val();
             if (val) {
                 // Merge or Overwrite? For now Overwrite from cloud to be safe sync.
-                // In a real app we might merge.
-                if (val.tasks) tasks = val.tasks;
-                if (val.categories) categories = val.categories;
+                if (val.tasks) tasks = val.tasks || [];
+                if (val.categories) categories = val.categories || [];
 
                 // Update Local Storage as backup
                 localStorage.setItem('planner_tasks', JSON.stringify(tasks));
                 localStorage.setItem('planner_categories', JSON.stringify(categories));
 
                 renderStack();
+                renderManageCats(); // Also update manage list
                 console.log("Synced from Cloud");
             }
         });
     } else {
-        // Offline Status: Red Dot
-        if (statusEl) statusEl.innerHTML = `<i class="fas fa-circle" style="color:#FF3B30; font-size:6px;"></i>`;
+        // Offline Mode
         console.log("Offline Mode (No TG ID or Firebase)");
+        if (window.updateOnlineStatus) window.updateOnlineStatus(false);
     }
 }
 
@@ -843,3 +845,75 @@ function renderPhotoPreviews() {
 }
 
 window.openTaskDetails = openTaskDetails;
+
+// --- Category Management Functions ---
+
+function addNewCatPrompt() {
+    // Simple prompt for now, can be upgraded to modal if needed
+    const name = prompt("Введите название новой категории:");
+    if (name && name.trim()) {
+        const cleanName = name.trim();
+        if (!categories.includes(cleanName)) {
+            categories.push(cleanName);
+            save(); // Use wrapper save()
+            renderStack(); // Update Home
+            renderManageCats(); // Update Manage Tab
+        } else {
+            alert("Такая категория уже существует!");
+        }
+    }
+}
+
+function renameCatPrompt(oldName) {
+    const newName = prompt("Новое название:", oldName);
+    if (newName && newName.trim() && newName !== oldName) {
+        const cleanName = newName.trim();
+        if (categories.includes(cleanName)) {
+            alert("Такая категория уже существует!");
+            return;
+        }
+
+        // Update Category List
+        const idx = categories.indexOf(oldName);
+        if (idx !== -1) {
+            categories[idx] = cleanName;
+        }
+
+        // Update Tasks
+        tasks.forEach(t => {
+            if (t.category === oldName) {
+                t.category = cleanName;
+            }
+        });
+
+        // Update Expanded State
+        if (expandedCategory === oldName) {
+            expandedCategory = cleanName;
+        }
+
+        save();
+        renderStack();
+        renderManageCats();
+    }
+}
+
+function deleteCat(cat) {
+    if (confirm(`Удалить категорию "${cat}" и все задачи в ней?`)) {
+        categories = categories.filter(c => c !== cat);
+        tasks = tasks.filter(t => t.category !== cat); // Cascade delete
+
+        if (expandedCategory === cat) {
+            expandedCategory = null;
+        }
+
+        save();
+        renderStack();
+        renderManageCats();
+    }
+}
+
+// Global Exports for HTML access
+window.addNewCatPrompt = addNewCatPrompt;
+window.renameCatPrompt = renameCatPrompt;
+window.deleteCat = deleteCat;
+window.switchTab = switchTab;
