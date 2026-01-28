@@ -577,3 +577,115 @@ body {
 .btn-text.accent {
     color: var(--accent-red);
 }
+
+/* ===== CATEGORY MANAGER STYLES ===== */
+.cat-item-row {
+    background: #FFFFFF;
+    border-radius: 16px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.cat-item-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+}
+
+.cat-action-btn {
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: transparent;
+    color: #8E8E93;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 8px;
+}
+
+.cat-action-btn:active {
+    background: #F2F2F7;
+}
+
+.cat-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1C1C1E;
+}
+
+.cat-drag-handle {
+    color: #C7C7CC;
+    font-size: 18px;
+    padding: 8px;
+    cursor: grab;
+}
+
+/* View Container - Categories Tab */
+#view-cats {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - var(--header-height) - var(--dock-height));
+    padding-bottom: 20px;
+}
+
+#view-cats .btn-primary {
+    margin-top: auto;
+}
+
+/* ===== BOTTOM DOCK FIX ===== */
+.bottom-dock {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 12px 32px;
+    border-radius: 40px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 48px;
+    z-index: 9999;
+}
+
+.dock-btn {
+    width: 48px;
+    height: 48px;
+    border: none;
+    background: transparent;
+    color: #C7C7CC;
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.dock-btn.active {
+    color: #1C1C1E;
+}
+
+.dock-fab {
+    width: 56px;
+    height: 56px;
+    background: var(--accent-red);
+    border-radius: 50%;
+    border: none;
+    color: white;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(255, 59, 48, 0.4);
+    cursor: pointer;
+}
