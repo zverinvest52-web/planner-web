@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initSync(); // Start Sync
     switchTab('home'); // Force correct view state
     renderStack();
-    console.log("App v38.0 loaded successfully");
+    console.log("App v39.0 loaded successfully");
 });
 
 // Firebase Init
@@ -920,6 +920,13 @@ function updateOnlineStatus(isOnline) {
     }
 }
 
-// Ensure exports
+// Ensure exports - ALL functions used in HTML onclick need to be global
 window.openAddTaskModal = openAddTaskModal;
 window.updateOnlineStatus = updateOnlineStatus;
+window.switchTab = switchTab;
+window.addNewCatPrompt = addNewCatPrompt;
+window.renameCatPrompt = renameCatPrompt;
+window.deleteCat = deleteCat;
+window.toggleTask = toggleTask;
+window.toggleCard = toggleCard;
+window.openTaskDetails = openTaskDetails;
