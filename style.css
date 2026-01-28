@@ -589,6 +589,10 @@ body {
     align-items: center;
     justify-content: space-between;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    touch-action: none;
+    /* Critical for drag handling */
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .cat-item-left {
@@ -634,8 +638,8 @@ body {
     display: flex;
     flex-direction: column;
     padding: 0 20px;
-    padding-bottom: 120px;
-    /* Extra space for dock + button */
+    padding-bottom: 150px;
+    /* More space */
     overflow-y: auto;
 }
 
@@ -665,8 +669,8 @@ body {
 
 #view-cats .btn-primary {
     position: fixed;
-    bottom: 110px;
-    /* Higher up to avoid dock */
+    bottom: 130px;
+    /* Higher up (was 110px) */
     left: 50%;
     transform: translateX(-50%);
     width: calc(100% - 48px);
