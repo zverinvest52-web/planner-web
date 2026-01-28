@@ -528,6 +528,11 @@ body {
     cursor: pointer;
 }
 
+#btn-save-task {
+    background: var(--accent-red) !important;
+    /* Force RED */
+}
+
 /* Dropdown */
 .relative {
     position: relative;
