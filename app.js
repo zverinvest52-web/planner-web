@@ -362,10 +362,10 @@ function renderManageCats() {
     list.innerHTML = '';
 
     // Add instruction text
-    const hint = document.createElement('div');
-    hint.innerText = "Удерживайте и тяните для сортировки";
-    hint.style.cssText = "font-size: 12px; color: #8E8E93; margin-bottom: 10px; text-align: center;";
-    list.appendChild(hint);
+    // const hint = document.createElement('div');
+    // hint.innerText = "Удерживайте и тяните для сортировки";
+    // ... removed for clean UI
+
 
     categories.forEach((cat, idx) => {
         const row = document.createElement('div');
@@ -455,34 +455,81 @@ function handleDragEnd(e) {
 // Touch Logic
 let touchSrcIdx = null;
 
+// --- Tabs & Navigation ---
+let currentTab = 'home';
+
+function switchTab(tab) {
+    currentTab = tab;
+
+    // Update Dock
+    document.querySelectorAll('.dock-btn').forEach(btn => btn.classList.remove('active'));
+    const activeBtn = document.getElementById(tab === 'home' ? 'nav-home' : 'nav-cats');
+    if (activeBtn) activeBtn.classList.add('active');
+
+    // Update Views
+    const homeView = document.getElementById('category-stack');
+    const catsView = document.getElementById('view-cats');
+    const searchBar = document.getElementById('search-bar-container'); // Hide search in cats?
+
+    if (tab === 'home') {
+        if (homeView) homeView.classList.remove('hidden');
+        if (catsView) catsView.classList.add('hidden');
+        renderStack();
+    } else {
+        if (homeView) homeView.classList.add('hidden');
+        if (catsView) catsView.classList.remove('hidden');
+        renderManageCats(); // Re-render list
+    }
+}
+
+// --- Drag & Drop (Mobile Visuals) ---
+let touchStartY = 0;
+let dragElInitialTop = 0;
+
 function handleTouchStart(e) {
     touchSrcIdx = parseInt(this.dataset.index);
     this.classList.add('dragging');
+
+    const touch = e.touches[0];
+    touchStartY = touch.clientY;
+
+    // Allow visual movement
+    this.style.transition = 'none'; // Disable transition for direct 1:1 movement
 }
 
 function handleTouchMove(e) {
-    e.preventDefault(); // Prevent scrolling while dragging
-    const touch = e.touches[0];
-    const target = document.elementFromPoint(touch.clientX, touch.clientY);
-    const row = target ? target.closest('.input-row') : null;
+    e.preventDefault(); // Stop scroll
+    if (touchSrcIdx === null) return;
 
-    // Optional: Add visual feedback for "hover"
+    const touch = e.touches[0];
+    const deltaY = touch.clientY - touchStartY;
+
+    this.style.transform = `translateY(${deltaY}px)`;
 }
 
 function handleTouchEnd(e) {
     this.classList.remove('dragging');
+    this.style.transform = ''; // Reset
+    this.style.transition = ''; // Restore
+
     const touch = e.changedTouches[0];
     const target = document.elementFromPoint(touch.clientX, touch.clientY);
-    const targetRow = target ? target.closest('.input-row') : null;
 
-    if (targetRow && touchSrcIdx !== null) {
+    // Find target row
+    const targetRow = target ? target.closest('.cat-item-row') : null;
+
+    if (targetRow) {
         const targetIdx = parseInt(targetRow.dataset.index);
         if (!isNaN(targetIdx) && targetIdx !== touchSrcIdx) {
             moveCatItem(touchSrcIdx, targetIdx);
         }
+    } else {
+        // Just reset if dropped nowhere valid
+        renderManageCats();
     }
     touchSrcIdx = null;
 }
+
 
 function moveCatItem(fromIndex, toIndex) {
     const item = categories[fromIndex];
@@ -556,6 +603,7 @@ function renderStack() {
             card.className = 'category-card';
 
             const isAfterExpanded = index > expIndex;
+            const isExpanded = (expandedCategory === cat);
 
             if (!isAfterExpanded) {
                 // Stack at TOP
@@ -571,7 +619,7 @@ function renderStack() {
 
             card.style.zIndex = 10 + index; // Lower base index
 
-            if (expandedCategory === cat) {
+            if (isExpanded) {
                 card.classList.add('expanded');
             } else {
                 card.classList.remove('expanded');
@@ -580,12 +628,15 @@ function renderStack() {
             const catTasks = tasks.filter(t => t.category === cat);
             const count = catTasks.filter(t => !t.completed).length;
 
+            // Only show list if expanded
+            const listDisplay = isExpanded ? 'block' : 'none';
+
             card.innerHTML = `
                 <div class="card-header">
                     <h2>${cat}</h2>
                     <div class="counter-badge">${count > 0 ? count : ''}</div>
                 </div>
-                <div class="task-list" id="list-${cat}"></div>
+                <div class="task-list" id="list-${cat}" style="display: ${listDisplay};"></div>
             `;
 
             card.querySelector('.card-header').addEventListener('click', () => {
@@ -594,8 +645,10 @@ function renderStack() {
 
             stackContainer.appendChild(card);
 
-            const listEl = card.querySelector(`#list-${cat}`);
-            renderTasksForCategory(listEl, catTasks);
+            if (isExpanded) {
+                const listEl = card.querySelector(`#list-${cat}`);
+                renderTasksForCategory(listEl, catTasks);
+            }
         });
     } catch (e) {
         console.error(e);

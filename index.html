@@ -43,20 +43,33 @@
         <header class="main-header">
             <div class="header-row">
                 <div class="date-header">
-                    <div class="subtitle">ПЛАНЕР</div>
+                    <div class="subtitle">
+                        ПЛАНЕР <span id="header-status-dot" class="status-dot"></span>
+                    </div>
                     <h1 id="header-date">Сегодня</h1>
                 </div>
                 <button class="btn-icon-header" id="btn-search-toggle">
                     <i class="fas fa-search"></i>
                 </button>
             </div>
-            <!-- Cloud Status (Minified) -->
-            <div id="cloud-status"
-                style="font-size:10px; color:#ccc; text-align:center; padding-bottom:4px; height:14px;">
-                <i class="fas fa-circle" style="font-size:6px;"></i>
-            </div>
             <!-- Collapsible Search -->
             <div class="search-bar hidden" id="search-bar-container">
+                <!-- ... -->
+
+                <!-- Bottom Dock -->
+                <div class="bottom-dock">
+                    <button class="dock-btn active" id="nav-home" onclick="switchTab('home')">
+                        <i class="fas fa-home"></i>
+                    </button>
+
+                    <button class="dock-fab" onclick="openAddTaskModal()">
+                        <i class="fas fa-plus"></i>
+                    </button>
+
+                    <button class="dock-btn" id="nav-cats" onclick="switchTab('cats')">
+                        <i class="fas fa-folder"></i>
+                    </button>
+                </div>
                 <i class="fas fa-search"></i>
                 <input type="text" id="global-search" placeholder="Поиск задач...">
             </div>
@@ -67,22 +80,31 @@
             <!-- Categories will be injected here -->
         </div>
 
+        <!-- Categories View (Tab) -->
+        <div class="view-container hidden" id="view-cats">
+            <div class="view-header">
+                <h2>Управление</h2>
+            </div>
+            <div id="cats-list-container"></div>
+            <button class="btn-primary" onclick="addNewCatPrompt()">Новая категория</button>
+        </div>
+
         <!-- Spacer for Dock -->
         <div class="dock-spacer"></div>
 
         <!-- Bottom Dock -->
         <div class="bottom-dock">
-            <div class="dock-content">
-                <button class="dock-btn active" id="nav-home">
-                    <i class="fas fa-home"></i>
-                </button>
-                <button class="dock-fab" id="nav-add">
-                    <i class="fas fa-plus"></i>
-                </button>
-                <button class="dock-btn" id="nav-cats">
-                    <i class="fas fa-folder"></i>
-                </button>
-            </div>
+            <button class="dock-btn active" id="nav-home" onclick="switchTab('home')">
+                <i class="fas fa-home"></i>
+            </button>
+
+            <button class="dock-fab" onclick="openAddTaskModal()">
+                <i class="fas fa-plus"></i>
+            </button>
+
+            <button class="dock-btn" id="nav-cats" onclick="switchTab('cats')">
+                <i class="fas fa-folder"></i>
+            </button>
         </div>
 
     </div>
