@@ -385,7 +385,8 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 200;
+    z-index: 10000;
+    /* Must be > dock (9999) */
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s;
@@ -678,7 +679,8 @@ body {
     transform: translateX(-50%);
     background: rgba(255, 255, 255, 0.98);
     backdrop-filter: blur(10px);
-    padding: 8px 24px;
+    padding: 8px 16px;
+    /* Narrower padding */
     border-radius: 32px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
     display: flex;
@@ -686,6 +688,64 @@ body {
     justify-content: center;
     gap: 32px;
     z-index: 9999;
+    min-width: fit-content;
+    /* Ensure it wraps tight */
+}
+
+.dock-btn {
+    width: 44px;
+    height: 44px;
+    border: none;
+    background: transparent;
+    color: #AEAEB2;
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.dock-btn.active {
+    color: #1C1C1E;
+}
+
+.dock-fab {
+    width: 52px;
+    height: 52px;
+    background: var(--accent-red);
+    border-radius: 50%;
+    border: none;
+    color: white;
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(255, 59, 48, 0.35);
+    cursor: pointer;
+}
+
+/* ===== DRAG & DROP ANIMATIONS ===== */
+.cat-item-row {
+    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.cat-item-row.dragging {
+    opacity: 0.95;
+    transform: scale(1.02);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    z-index: 1000;
+    position: relative;
+    background: #fff;
+}
+
+.cat-item-row.drag-over {
+    transform: translateY(74px);
+    /* Shift down by ~height of row to make real space */
+}
+
+.cat-item-row.drag-above {
+    transform: translateY(-74px);
+    /* Shift up by ~height of row */
 }
 
 .dock-btn {

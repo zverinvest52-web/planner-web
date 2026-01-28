@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initSync(); // Start Sync
     switchTab('home'); // Force correct view state
     renderStack();
-    console.log("App v41.0 loaded successfully");
+    console.log("App v43.0 loaded successfully");
 });
 
 // Firebase Init
