@@ -16,6 +16,24 @@
     --card-radius: 32px;
 }
 
+/* GLOBAL HIDDEN CLASS - CRITICAL */
+.hidden {
+    display: none !important;
+}
+
+/* View Container for Tab Views */
+.view-container {
+    position: absolute;
+    top: var(--header-height);
+    left: 0;
+    right: 0;
+    bottom: var(--dock-height);
+    padding: 20px;
+    overflow-y: auto;
+    background: var(--bg-light);
+    z-index: 50;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -51,6 +69,32 @@ body {
     justify-content: center;
     z-index: 200;
     background: var(--bg-light);
+}
+
+/* Online Status Dot */
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    background-color: #FF3B30;
+    /* Default Offline (Red) */
+    margin-left: 6px;
+    vertical-align: middle;
+    transition: background-color 0.3s;
+}
+
+.status-dot.online {
+    background-color: #34C759;
+    /* Green = Connected */
+}
+
+/* View Header */
+.view-header h2 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: var(--text-dark);
 }
 
 .header-row {
