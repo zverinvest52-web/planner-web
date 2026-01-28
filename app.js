@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initSync(); // Start Sync
     switchTab('home'); // Force correct view state
     renderStack();
-    console.log("App v45.0 loaded successfully");
+    console.log("App v46.0 loaded successfully");
 });
 
 // Firebase Init
@@ -453,50 +453,156 @@ function handleTouchMove(e) {
     const touch = e.touches[0];
     const deltaY = touch.clientY - touchStartY;
 
-    this.style.transform = `translateY(${deltaY}px) scale(1.03)`;
+    // Move dragged element
+    this.style.transform = `translateY(${deltaY}px) scale(1.05)`;
+    this.style.background = '#FFFFFF';
+    this.style.zIndex = '1000';
+    this.style.boxShadow = '0 8px 24px rgba(0,0,0,0.15)';
 
-    // Show preview: highlight where item will land
-    const allRows = document.querySelectorAll('.cat-item-row');
-    const hoverTarget = document.elementFromPoint(touch.clientX, touch.clientY);
-    const targetRow = hoverTarget ? hoverTarget.closest('.cat-item-row') : null;
+    const allRows = Array.from(document.querySelectorAll('.cat-item-row'));
+    const draggedRow = this;
+    const draggedRect = draggedRow.getBoundingClientRect();
+    const draggedCenterY = draggedRect.top + draggedRect.height / 2;
 
-    allRows.forEach(row => {
-        row.classList.remove('drag-over', 'drag-above');
-        if (targetRow && row === targetRow && row !== this) {
-            const targetIdx = parseInt(targetRow.dataset.index);
-            if (targetIdx > touchSrcIdx) {
-                row.classList.add('drag-over');
-            } else {
-                row.classList.add('drag-above');
+    // Calculate potential new index
+    // We check where the dragged item fits among the STATIC positions of other items
+    let potentialIndex = 0;
+
+    // We assume rows are ordered in DOM.
+    // We want to find the first row whose center is "below" the dragged item's center
+    // BUT we must exclude the dragged row itself from this logic to simulate the "gap"
+    const staticRows = allRows.filter(r => r !== draggedRow);
+
+    if (staticRows.length === 0) {
+        potentialIndex = 0;
+    } else {
+        // If above the first one
+        const firstRect = staticRows[0].getBoundingClientRect();
+        if (draggedCenterY < firstRect.top) {
+            potentialIndex = 0;
+        }
+        // If below the last one
+        else if (draggedCenterY > staticRows[staticRows.length - 1].getBoundingClientRect().bottom) {
+            potentialIndex = allRows.length - 1;
+        }
+        // Somewhere in between
+        else {
+            // Find insertion point
+            let inserted = false;
+            for (let i = 0; i < staticRows.length; i++) {
+                const rect = staticRows[i].getBoundingClientRect();
+                const center = rect.top + rect.height / 2;
+                if (draggedCenterY < center) {
+                    // Insert before this static item. 
+                    // The static item is at index i in the filtered list.
+                    // The original index of this static item might be > touchSrcIdx.
+                    // Basically, potentialIndex is the position in the FULL list.
+
+                    // Helper: map back to original indices
+                    const originalIdx = parseInt(staticRows[i].dataset.index);
+
+                    // If we move item up (potential < src):
+                    // The item currently at potentialIndex shifts down.
+                    // If we move item down (potential > src):
+                    // The item currently at potentialIndex shifts up.
+
+                    // Let's rely on simple swapping logic relative to original list
+                    if (originalIdx < touchSrcIdx) {
+                        potentialIndex = originalIdx;
+                    } else {
+                        potentialIndex = originalIdx - 1;
+                        // Wait, if we are moving down, we skip passed items.
+                        // It's easier to count how many items we passed.
+                    }
+                    inserted = true;
+                    break;
+                }
             }
+            if (!inserted) potentialIndex = allRows.length - 1;
+        }
+    }
+
+    // Correct logic: Just iterate list and count how many items are "above" the cursor
+    let newIndex = 0;
+    staticRows.forEach(row => {
+        const rect = row.getBoundingClientRect();
+        const center = rect.top + rect.height / 2;
+        if (draggedCenterY > center) {
+            newIndex++;
         }
     });
+
+    // Apply visual transforms to Make Room
+    // Items between source and newIndex need to shift
+    const rowHeight = draggedRect.height + 12; // 12px margin
+
+    allRows.forEach(row => {
+        if (row === draggedRow) return;
+
+        const rowIdx = parseInt(row.dataset.index);
+        row.style.transition = 'transform 0.2s ease';
+
+        // If dragging DOWN (newIndex > source)
+        if (newIndex > touchSrcIdx) {
+            /* 
+               Items [source+1 ... newIndex] should shift UP 
+               Example: [A, B, C, D]. Move A (0) to pos 2 (after B). New Order: [B, A, C, D]
+               B (1) shifts UP.
+            */
+            if (rowIdx > touchSrcIdx && rowIdx <= newIndex) {
+                row.style.transform = `translateY(-${rowHeight}px)`;
+            } else {
+                row.style.transform = '';
+            }
+        }
+        // If dragging UP (newIndex < source)
+        else if (newIndex < touchSrcIdx) {
+            /*
+               Items [newIndex ... source-1] should shift DOWN
+               Example: [A, B, C, D]. Move C (2) to pos 0 (before A). New Order: [C, A, B, D]
+               A (0), B (1) shift DOWN.
+            */
+            if (rowIdx >= newIndex && rowIdx < touchSrcIdx) {
+                row.style.transform = `translateY(${rowHeight}px)`;
+            } else {
+                row.style.transform = '';
+            }
+        } else {
+            row.style.transform = '';
+        }
+    });
+
+    // Store potential target for Drop
+    this.dataset.targetIndex = newIndex;
 }
 
 function handleTouchEnd(e) {
     this.classList.remove('dragging');
     this.style.transform = ''; // Reset
     this.style.transition = ''; // Restore
+    this.style.background = '';
+    this.style.zIndex = '';
+    this.style.boxShadow = '';
 
-    // Remove all drag indicators
+    // Remove all transitions from others
     document.querySelectorAll('.cat-item-row').forEach(row => {
-        row.classList.remove('drag-over', 'drag-above');
+        row.style.transform = '';
+        row.style.transition = '';
     });
 
-    const touch = e.changedTouches[0];
-    const target = document.elementFromPoint(touch.clientX, touch.clientY);
+    // Use the target index we calculated during the move
+    // Default to src index if undefined
+    let targetIdx = parseInt(this.dataset.targetIndex);
 
-    // Find target row
-    const targetRow = target ? target.closest('.cat-item-row') : null;
+    if (isNaN(targetIdx)) {
+        targetIdx = touchSrcIdx;
+    }
 
-    if (targetRow) {
-        const targetIdx = parseInt(targetRow.dataset.index);
-        if (!isNaN(targetIdx) && targetIdx !== touchSrcIdx) {
-            moveCatItem(touchSrcIdx, targetIdx);
-        }
+    // Only move if changed
+    if (targetIdx !== touchSrcIdx) {
+        moveCatItem(touchSrcIdx, targetIdx);
     } else {
-        // Just reset if dropped nowhere valid
-        renderManageCats();
+        renderManageCats(); // Re-render to clear any stuck styles
     }
     touchSrcIdx = null;
 }
