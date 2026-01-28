@@ -54,13 +54,14 @@ const HEADER_HEIGHT_REM = 3;
 const TOP_OFFSET_PX = 10;
 
 // Init
+// Init
 document.addEventListener('DOMContentLoaded', () => {
     updateHeaderDate();
+    setupEventListeners(); // Enable UI interaction
     initSync(); // Start Sync
+    switchTab('home'); // Force correct view state
     renderStack();
-    renderStack();
-    setupEventListeners();
-    console.log("App v25.0 loaded successfully");
+    console.log("App v35.0 loaded successfully");
 });
 
 // Firebase Init
@@ -916,4 +917,63 @@ function deleteCat(cat) {
 window.addNewCatPrompt = addNewCatPrompt;
 window.renameCatPrompt = renameCatPrompt;
 window.deleteCat = deleteCat;
-window.switchTab = switchTab;
+// --- Restored Critical Functions ---
+
+function openAddTaskModal() {
+    // Reset fields
+    currentEditingTaskId = null;
+    const title = document.getElementById('modal-title');
+    if (title) title.innerText = "НОВАЯ ЗАДАЧА";
+
+    document.getElementById('input-title').value = "";
+    document.getElementById('input-desc').value = "";
+    document.getElementById('input-tags').value = "";
+    document.getElementById('input-time').value = "";
+
+    // Reset Date
+    selectedDate = null;
+    if (typeof updateDateLabel === 'function') updateDateLabel();
+
+    // Reset Category
+    selectedCategory = (categories && categories.length > 0) ? categories[0] : "ОБЩИЕ";
+    if (categories.length === 0) categories.push("ОБЩИЕ");
+    const lblCat = document.getElementById('label-cat');
+    if (lblCat) lblCat.innerText = selectedCategory;
+
+    // Reset Photos
+    currentPhotos = [];
+    if (typeof renderPhotoPreviews === 'function') renderPhotoPreviews();
+
+    // Reset Buttons
+    const btnSave = document.getElementById('btn-save-task');
+    const btnDelete = document.getElementById('btn-delete-task');
+
+    if (btnSave) {
+        btnSave.innerText = "СОХРАНИТЬ";
+        btnSave.style.background = "#007AFF"; // Blue
+        // Note: btnSave.onclick is handled in init, but we might need to re-bind if init failed?
+        // Actually init binding is static.
+    }
+
+    if (btnDelete) btnDelete.classList.add('hidden');
+
+    const modal = document.getElementById('modal-add-task');
+    if (modal) modal.classList.remove('hidden');
+}
+
+function updateOnlineStatus(isOnline) {
+    const dot = document.getElementById('header-status-dot');
+    if (!dot) return;
+
+    if (isOnline) {
+        dot.classList.remove('syncing');
+        dot.classList.add('online');
+    } else {
+        dot.classList.remove('online');
+        dot.classList.remove('syncing');
+    }
+}
+
+// Ensure exports
+window.openAddTaskModal = openAddTaskModal;
+window.updateOnlineStatus = updateOnlineStatus;
