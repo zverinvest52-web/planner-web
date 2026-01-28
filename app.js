@@ -54,14 +54,13 @@ const HEADER_HEIGHT_REM = 3;
 const TOP_OFFSET_PX = 10;
 
 // Init
-// Init
 document.addEventListener('DOMContentLoaded', () => {
     updateHeaderDate();
     setupEventListeners(); // Enable UI interaction
     initSync(); // Start Sync
     switchTab('home'); // Force correct view state
     renderStack();
-    console.log("App v35.0 loaded successfully");
+    console.log("App v36.0 loaded successfully");
 });
 
 // Firebase Init
@@ -145,30 +144,8 @@ function initSync() {
 }
 
 function setupEventListeners() {
-    // Add Button
-    document.getElementById('nav-add').onclick = () => {
-        currentEditingTaskId = null;
-        document.getElementById('modal-title').innerText = "НОВАЯ ЗАДАЧА";
-        document.getElementById('btn-save-task').innerText = "СОЗДАТЬ";
-        const btnDelete = document.getElementById('btn-delete-task');
-        if (btnDelete) btnDelete.classList.add('hidden');
-
-        document.getElementById('input-title').value = '';
-        document.getElementById('input-desc').value = '';
-        document.getElementById('input-tags').value = '';
-        document.getElementById('input-time').value = '';
-        selectedDate = null;
-        updateDateLabel();
-        updateDateLabel();
-        selectedCategory = expandedCategory || categories[0];
-        document.getElementById('label-cat').innerText = selectedCategory;
-
-        // Reset Photos
-        currentPhotos = [];
-        renderPhotoPreviews();
-
-        modalAdd.classList.remove('hidden');
-    };
+    // Note: Add Task button uses inline onclick="openAddTaskModal()" in HTML
+    // No separate event binding needed here for the FAB button
 
     // Close Modal
     document.getElementById('close-add-task').onclick = () => {
@@ -298,41 +275,8 @@ function setupEventListeners() {
         };
     }
 
-    // Dock: Home
-    const navHome = document.getElementById('nav-home');
-    if (navHome) {
-        navHome.onclick = () => {
-            expandedCategory = null; // Collapse all
-            renderStack();
-        };
-    }
-
-    // Dock: Categories (Manage)
-    const navCats = document.getElementById('nav-cats');
-    const modalCats = document.getElementById('modal-manage-cats');
-
-    if (navCats && modalCats) {
-        navCats.onclick = () => {
-            renderManageCats();
-            modalCats.classList.remove('hidden');
-        };
-
-        document.getElementById('close-manage-cats').onclick = () => {
-            modalCats.classList.add('hidden');
-        };
-
-        document.getElementById('btn-add-cat').onclick = () => {
-            const inp = document.getElementById('input-new-cat');
-            const val = inp.value.trim();
-            if (val && !categories.includes(val)) {
-                categories.push(val);
-                inp.value = '';
-                save();
-                renderManageCats();
-                renderStack(); // Update background
-            }
-        };
-    }
+    // Note: nav-home and nav-cats use inline onclick="switchTab(...)" in HTML
+    // Modal Manage Cats is also handled via view-cats tab now
 
     // Search Toggle
     const btnSearch = document.getElementById('btn-search-toggle');
