@@ -665,10 +665,16 @@ body {
 
 #view-cats .btn-primary {
     position: fixed;
-    bottom: 100px;
-    left: 20px;
-    right: 20px;
+    bottom: 110px;
+    /* Higher up to avoid dock */
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 48px);
+    /* 24px padding on each side */
+    max-width: 400px;
     z-index: 100;
+    margin: 0;
+    /* Reset margins */
 }
 
 /* ===== BOTTOM DOCK - NARROWER ===== */
@@ -736,6 +742,8 @@ body {
     z-index: 1000;
     position: relative;
     background: #fff;
+    pointer-events: none;
+    /* Critical: allows finding element behind it */
 }
 
 .cat-item-row.drag-over {
