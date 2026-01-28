@@ -49,6 +49,7 @@ let selectedDate = null;
 let selectedCategory = 'ОБЩИЕ';
 let expandedCategory = null;
 let currentPhotos = [];
+let currentTab = 'home'; // Track active tab
 const HEADER_HEIGHT_PX = 50;
 const HEADER_HEIGHT_REM = 3;
 const TOP_OFFSET_PX = 10;
@@ -60,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initSync(); // Start Sync
     switchTab('home'); // Force correct view state
     renderStack();
-    console.log("App v37.0 loaded successfully");
+    console.log("App v38.0 loaded successfully");
 });
 
 // Firebase Init
@@ -132,7 +133,8 @@ function initSync() {
                 localStorage.setItem('planner_categories', JSON.stringify(categories));
 
                 renderStack();
-                renderManageCats(); // Also update manage list
+                // Only update manage list if on that tab
+                if (currentTab === 'cats') renderManageCats();
                 console.log("Synced from Cloud");
             }
         });
@@ -403,7 +405,7 @@ function handleDragEnd(e) {
 let touchSrcIdx = null;
 
 // --- Tabs & Navigation ---
-let currentTab = 'home';
+// currentTab is declared at top of file
 
 function switchTab(tab) {
     currentTab = tab;
