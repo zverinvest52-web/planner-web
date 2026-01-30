@@ -47,21 +47,19 @@
         <!-- Header -->
         <header class="main-header">
             <div class="header-row">
-                <div class="date-header">
-                    <div class="subtitle">
-                        ПЛАНЕР <span id="header-status-dot" class="status-dot"></span>
+                <div class="header-row">
+                    <div class="date-container-center">
+                        <h1 id="header-date">Сегодня <span id="header-status-dot" class="status-dot"></span></h1>
                     </div>
-                    <h1 id="header-date">Сегодня</h1>
+                    <button class="btn-icon-header" id="btn-search-toggle">
+                        <i class="fas fa-search"></i>
+                    </button>
                 </div>
-                <button class="btn-icon-header" id="btn-search-toggle">
+                <!-- Collapsible Search -->
+                <div class="search-bar hidden" id="search-bar-container">
                     <i class="fas fa-search"></i>
-                </button>
-            </div>
-            <!-- Collapsible Search -->
-            <div class="search-bar hidden" id="search-bar-container">
-                <i class="fas fa-search"></i>
-                <input type="text" id="global-search" placeholder="Поиск задач...">
-            </div>
+                    <input type="text" id="global-search" placeholder="Поиск задач...">
+                </div>
         </header>
 
         <!-- Category Stack -->
@@ -257,10 +255,10 @@
 
     <!-- Scripts -->
     <!-- Scripts -->
-    <script src="app.js?v=51.2"></script>
+    <script src="app.js?v=51.3"></script>
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js?v=51.2').then(reg => {
+            navigator.serviceWorker.register('sw.js?v=51.3').then(reg => {
                 reg.update();
             });
         }
