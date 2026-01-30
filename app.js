@@ -840,9 +840,9 @@ function renderTasksForCategory(container, taskList) {
             toggleTask(task.id);
         });
 
-        const contentArea = div.querySelector('.task-content');
         contentArea.addEventListener('click', (e) => {
             e.stopPropagation();
+            // console.log("Click task:", task.title);
             openTaskDetails(task);
         });
 
@@ -898,6 +898,7 @@ function formatDate(isoStr) {
 
 function openTaskDetails(task) {
     try {
+        console.log("Opening details for:", task.id);
         currentEditingTaskId = task.id;
 
         // Populate VIEW Modal
