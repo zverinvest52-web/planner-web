@@ -88,34 +88,36 @@ body {
     /* Reduced from 32px */
     font-weight: 700;
     margin: 0;
+    width: 100%;
+    justify-content: center;
     display: flex;
     align-items: center;
     gap: 8px;
-}
-
-.btn-icon-header {
-    position: absolute;
-    right: 0;
-    background: white;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    border: none;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    cursor: pointer;
 }
 
 /* Online Status Dot */
 .status-dot {
     width: 8px;
     height: 8px;
+    min-width: 8px;
+    /* Force size */
+    flex-shrink: 0;
+    /* Prevent squash */
     border-radius: 50%;
     display: inline-block;
     background-color: #FF3B30;
     /* Default Offline (Red) */
-    margin-left: 6px;
+    margin-left: 2px;
     vertical-align: middle;
     transition: background-color 0.3s;
+}
+
+.view-task-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin: 0 0 16px 0;
+    line-height: 1.2;
 }
 
 .status-dot.online {
