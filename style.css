@@ -101,24 +101,7 @@ body {
     gap: 8px;
 }
 
-/* Online Status Dot */
-.status-dot {
-    width: 8px;
-    height: 8px;
-    min-width: 8px;
-    /* Force size */
-    flex-shrink: 0;
-    /* Prevent squash */
-    /* Prevent squash */
-    border-radius: 50%;
-    display: inline-block;
-    background-color: #FF3B30 !important;
-    /* Force Color */
-    /* Default Offline (Red) */
-    margin-left: 8px;
-    vertical-align: middle;
-    transition: background-color 0.3s;
-}
+/* Legacy status dot removed */
 
 .view-task-title {
     font-size: 22px;

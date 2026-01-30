@@ -52,17 +52,12 @@ let currentPhotos = [];
 let currentTab = 'home'; // Track active tab
 const HEADER_HEIGHT_PX = 50;
 const HEADER_HEIGHT_REM = 3;
-const TOP_OFFSET_PX = 0; // Raised from 10 to 0
+const TOP_OFFSET_PX = 2; // Raised from 10 to 0
 
 // Init
 document.addEventListener('DOMContentLoaded', () => {
     updateHeaderDate();
     setupEventListeners(); // Enable UI interaction
-
-    // Status Logic
-    window.addEventListener('online', () => updateOnlineStatus(true));
-    window.addEventListener('offline', () => updateOnlineStatus(false));
-    updateOnlineStatus(navigator.onLine); // Initial check
 
     initSync(); // Start Sync
     switchTab('home'); // Force correct view state
@@ -705,10 +700,7 @@ function updateHeaderDate() {
         const now = new Date();
         const options = { day: 'numeric', month: 'long' };
         const dateString = now.toLocaleDateString('ru-RU', options);
-        // Preserve the dot
-        headerDate.innerHTML = `${dateString} <span id="header-status-dot" class="status-dot"></span>`;
-        // Assuming updateOnlineStatus() is defined elsewhere and handles the dot's color
-        updateOnlineStatus();
+        headerDate.textContent = dateString;
     }
 }
 
