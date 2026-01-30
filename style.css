@@ -109,11 +109,13 @@ body {
     /* Force size */
     flex-shrink: 0;
     /* Prevent squash */
+    /* Prevent squash */
     border-radius: 50%;
     display: inline-block;
-    background-color: #FF3B30;
+    background-color: #FF3B30 !important;
+    /* Force Color */
     /* Default Offline (Red) */
-    margin-left: 2px;
+    margin-left: 8px;
     vertical-align: middle;
     transition: background-color 0.3s;
 }
