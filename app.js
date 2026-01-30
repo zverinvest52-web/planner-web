@@ -1,3 +1,9 @@
+// Global Error Handler for Debugging
+window.onerror = function (msg, url, line, col, error) {
+    alert("Error: " + msg + "\nLine: " + line);
+    return false;
+};
+
 // State
 // Helper for safe parsing
 function safeParse(key, def) {
@@ -146,198 +152,186 @@ function initSync() {
 }
 
 function setupEventListeners() {
-    // Note: Add Task button uses inline onclick="openAddTaskModal()" in HTML
-    // No separate event binding needed here for the FAB button
+    try {
+        // Note: Add Task button uses inline onclick="openAddTaskModal()" in HTML
+        // No separate event binding needed here for the FAB button
 
-    // Close Modal Add
-    document.getElementById('close-add-task').onclick = () => {
-        modalAdd.classList.add('hidden');
-    };
+        // Close Modal Add
+        document.getElementById('close-add-task').onclick = () => {
+            modalAdd.classList.add('hidden');
+        };
 
-    // Close Modal View
-    document.getElementById('btn-close-view').onclick = () => {
-        document.getElementById('modal-view-task').classList.add('hidden');
-    };
-
-    // View -> Edit
-    document.getElementById('btn-view-edit-top').onclick = () => {
-        document.getElementById('modal-view-task').classList.add('hidden');
-        if (currentEditingTaskId) {
-            const task = tasks.find(t => t.id === currentEditingTaskId);
-            if (task) openEditModal(task);
-        }
-    };
-
-    // View -> Complete
-    document.getElementById('btn-view-complete').onclick = () => {
-        if (currentEditingTaskId) {
-            toggleTask(currentEditingTaskId);
+        // Close Modal View
+        document.getElementById('btn-close-view').onclick = () => {
             document.getElementById('modal-view-task').classList.add('hidden');
-        }
-    };
+        };
 
-    // View -> Delete
-    document.getElementById('btn-view-delete').onclick = () => {
-        if (currentEditingTaskId) {
-            if (confirm("Удалить задачу?")) {
-                tasks = tasks.filter(t => t.id !== currentEditingTaskId);
-                save();
-                currentEditingTaskId = null;
-                renderStack();
+        // View -> Edit
+        document.getElementById('btn-view-edit-top').onclick = () => {
+            document.getElementById('modal-view-task').classList.add('hidden');
+            if (currentEditingTaskId) {
+                const task = tasks.find(t => t.id === currentEditingTaskId);
+                if (task) openEditModal(task);
+            }
+        };
+
+        // View -> Complete
+        document.getElementById('btn-view-complete').onclick = () => {
+            if (currentEditingTaskId) {
+                toggleTask(currentEditingTaskId);
                 document.getElementById('modal-view-task').classList.add('hidden');
             }
-        }
-    };
+        };
 
-    // Save Task
-    document.getElementById('btn-save-task').onclick = () => {
-        const title = document.getElementById('input-title').value.trim();
-        if (!title) return;
+        // View -> Delete
+        document.getElementById('btn-view-delete').onclick = () => {
+            if (currentEditingTaskId) {
+                if (confirm("Удалить задачу?")) {
+                    tasks = tasks.filter(t => t.id !== currentEditingTaskId);
+                    save();
+                    currentEditingTaskId = null;
+                    renderStack();
+                    document.getElementById('modal-view-task').classList.add('hidden');
+                }
+            }
+        };
 
-        if (currentEditingTaskId) {
-            // Edit
-            const taskIndex = tasks.findIndex(t => t.id === currentEditingTaskId);
-            if (taskIndex > -1) {
-                tasks[taskIndex] = {
-                    ...tasks[taskIndex],
+        // Save Task
+        document.getElementById('btn-save-task').onclick = () => {
+            const title = document.getElementById('input-title').value.trim();
+            if (!title) return;
+
+            if (currentEditingTaskId) {
+                // Edit
+                const taskIndex = tasks.findIndex(t => t.id === currentEditingTaskId);
+                if (taskIndex > -1) {
+                    tasks[taskIndex] = {
+                        ...tasks[taskIndex],
+                        title: title,
+                        description: document.getElementById('input-desc').value,
+                        category: selectedCategory,
+                        tags: document.getElementById('input-tags').value,
+                        time: document.getElementById('input-time').value,
+                        date: selectedDate,
+                        photos: currentPhotos // Save photos
+                    };
+                }
+            } else {
+                // Create
+                const newTask = {
+                    id: Date.now().toString(),
                     title: title,
                     description: document.getElementById('input-desc').value,
                     category: selectedCategory,
                     tags: document.getElementById('input-tags').value,
                     time: document.getElementById('input-time').value,
                     date: selectedDate,
-                    photos: currentPhotos // Save photos
+                    photos: currentPhotos, // Save photos
+                    completed: false
                 };
-            }
-        } else {
-            // Create
-            const newTask = {
-                id: Date.now().toString(),
-                title: title,
-                description: document.getElementById('input-desc').value,
-                category: selectedCategory,
-                tags: document.getElementById('input-tags').value,
-                time: document.getElementById('input-time').value,
-                date: selectedDate,
-                photos: currentPhotos, // Save photos
-                completed: false
-            };
-            tasks.push(newTask);
-        }
-
-        save();
-        modalAdd.classList.add('hidden');
-    };
-
-    // Photo Handlers
-    const btnAddPhoto = document.getElementById('btn-add-photo');
-    const inputPhoto = document.getElementById('input-photo-native');
-
-    if (btnAddPhoto && inputPhoto) {
-        btnAddPhoto.onclick = () => inputPhoto.click();
-
-        inputPhoto.onchange = (e) => {
-            const files = Array.from(e.target.files);
-            if (!files.length) return;
-
-            // Limit total photos to prevent storage overflow (max 3 for now)
-            if (currentPhotos.length + files.length > 5) {
-                alert("Максимум 5 фото");
-                return;
+                tasks.push(newTask);
             }
 
-            files.forEach(file => {
-                const reader = new FileReader();
-                reader.onload = (evt) => {
-                    // Simple compression by not touching it? LocalStorage has 5MB limit. 
-                    // ideally we should resize. For now raw base64.
-                    currentPhotos.push(evt.target.result);
-                    renderPhotoPreviews();
-                };
-                reader.readAsDataURL(file);
-            });
-            inputPhoto.value = ''; // Reset
+            save();
+            modalAdd.classList.add('hidden');
         };
-    }
 
-    // Delete Task Button
-    const btnDelete = document.getElementById('btn-delete-task');
-    if (btnDelete) {
-        btnDelete.onclick = () => {
-            if (currentEditingTaskId) {
-                tasks = tasks.filter(t => t.id !== currentEditingTaskId);
-                save();
-                modalAdd.classList.add('hidden');
-            }
+        // Photo Handlers
+        const btnAddPhoto = document.getElementById('btn-add-photo');
+        const inputPhoto = document.getElementById('input-photo-native');
+
+        if (btnAddPhoto && inputPhoto) {
+            btnAddPhoto.onclick = () => inputPhoto.click();
+
+            // Simple compression by not touching it? LocalStorage has 5MB limit. 
+            // ideally we should resize. For now raw base64.
+            currentPhotos.push(evt.target.result);
+            renderPhotoPreviews();
         };
-    }
-
-    // Modal Date Pickers
-    document.getElementById('btn-pick-date').onclick = () => {
-        document.getElementById('modal-datepicker').classList.remove('hidden');
-    };
-    document.getElementById('btn-cancel-date').onclick = () => {
-        document.getElementById('modal-datepicker').classList.add('hidden');
-    };
-    document.getElementById('btn-confirm-date').onclick = () => {
-        const val = inputDateNative.value;
-        if (val) selectedDate = val;
-        updateDateLabel();
-        document.getElementById('modal-datepicker').classList.add('hidden');
-    };
-    document.getElementById('btn-clear-date').onclick = (e) => {
-        e.stopPropagation();
-        selectedDate = null;
-        updateDateLabel();
-    };
-
-    // Category Picker
-    const btnPickCat = document.getElementById('btn-pick-cat');
-    if (btnPickCat) {
-        btnPickCat.onclick = () => {
-            const dd = document.getElementById('dropdown-cat');
-            dd.classList.toggle('hidden');
-            dd.innerHTML = '';
-            categories.forEach(cat => {
-                const item = document.createElement('div');
-                item.className = 'dropdown-item';
-                item.innerText = cat;
-                item.onclick = () => {
-                    selectedCategory = cat;
-                    document.getElementById('label-cat').innerText = cat;
-                    dd.classList.add('hidden');
-                };
-                dd.appendChild(item);
-            });
-        };
-    }
-
-    // Note: nav-home and nav-cats use inline onclick="switchTab(...)" in HTML
-    // Modal Manage Cats is also handled via view-cats tab now
-
-    // Search Toggle
-    const btnSearch = document.getElementById('btn-search-toggle');
-    if (btnSearch) {
-        btnSearch.onclick = (e) => {
-            e.stopPropagation(); // Prevent document click from closing immediately
-            const sb = document.getElementById('search-bar-container');
-            sb.classList.toggle('hidden');
-            if (!sb.classList.contains('hidden')) {
-                document.getElementById('global-search').focus();
-            }
-        };
-    }
-
-    // Close search on click outside
-    document.addEventListener('click', (e) => {
-        const sb = document.getElementById('search-bar-container');
-        const btn = document.getElementById('btn-search-toggle');
-        if (sb && !sb.classList.contains('hidden')) {
-            if (!sb.contains(e.target) && !btn.contains(e.target)) {
-                sb.classList.add('hidden');
-            }
-        }
+        reader.readAsDataURL(file);
     });
+    inputPhoto.value = ''; // Reset
+};
+    }
+
+// Delete Task Button
+const btnDelete = document.getElementById('btn-delete-task');
+if (btnDelete) {
+    btnDelete.onclick = () => {
+        if (currentEditingTaskId) {
+            tasks = tasks.filter(t => t.id !== currentEditingTaskId);
+            save();
+            modalAdd.classList.add('hidden');
+        }
+    };
+}
+
+// Modal Date Pickers
+document.getElementById('btn-pick-date').onclick = () => {
+    document.getElementById('modal-datepicker').classList.remove('hidden');
+};
+document.getElementById('btn-cancel-date').onclick = () => {
+    document.getElementById('modal-datepicker').classList.add('hidden');
+};
+document.getElementById('btn-confirm-date').onclick = () => {
+    const val = inputDateNative.value;
+    if (val) selectedDate = val;
+    updateDateLabel();
+    document.getElementById('modal-datepicker').classList.add('hidden');
+};
+document.getElementById('btn-clear-date').onclick = (e) => {
+    e.stopPropagation();
+    selectedDate = null;
+    updateDateLabel();
+};
+
+// Category Picker
+const btnPickCat = document.getElementById('btn-pick-cat');
+if (btnPickCat) {
+    btnPickCat.onclick = () => {
+        const dd = document.getElementById('dropdown-cat');
+        dd.classList.toggle('hidden');
+        dd.innerHTML = '';
+        categories.forEach(cat => {
+            const item = document.createElement('div');
+            item.className = 'dropdown-item';
+            item.innerText = cat;
+            item.onclick = () => {
+                selectedCategory = cat;
+                document.getElementById('label-cat').innerText = cat;
+                dd.classList.add('hidden');
+            };
+            dd.appendChild(item);
+        });
+    };
+}
+
+// Note: nav-home and nav-cats use inline onclick="switchTab(...)" in HTML
+// Modal Manage Cats is also handled via view-cats tab now
+
+// Search Toggle
+const btnSearch = document.getElementById('btn-search-toggle');
+if (btnSearch) {
+    btnSearch.onclick = (e) => {
+        e.stopPropagation(); // Prevent document click from closing immediately
+        const sb = document.getElementById('search-bar-container');
+        sb.classList.toggle('hidden');
+        if (!sb.classList.contains('hidden')) {
+            document.getElementById('global-search').focus();
+        }
+    };
+}
+
+// Close search on click outside
+document.addEventListener('click', (e) => {
+    const sb = document.getElementById('search-bar-container');
+    const btn = document.getElementById('btn-search-toggle');
+    if (sb && !sb.classList.contains('hidden')) {
+        if (!sb.contains(e.target) && !btn.contains(e.target)) {
+            sb.classList.add('hidden');
+        }
+    }
+});
 }
 
 function renderManageCats() {
