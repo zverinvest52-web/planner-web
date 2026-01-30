@@ -694,9 +694,16 @@ window.deleteCat = (cat) => {
 };
 
 function updateHeaderDate() {
-    const options = { month: 'long', day: 'numeric' };
-    const dateStr = new Date().toLocaleDateString('ru-RU', options);
-    document.getElementById('header-date').innerText = dateStr;
+    const headerDate = document.getElementById('header-date');
+    if (headerDate) {
+        const now = new Date();
+        const options = { day: 'numeric', month: 'long' };
+        const dateString = now.toLocaleDateString('ru-RU', options);
+        // Preserve the dot
+        headerDate.innerHTML = `${dateString} <span id="header-status-dot" class="status-dot"></span>`;
+        // Assuming updateOnlineStatus() is defined elsewhere and handles the dot's color
+        updateOnlineStatus();
+    }
 }
 
 function getTodayStr() {

@@ -69,8 +69,8 @@ body {
     justify-content: center;
     align-items: flex-start;
     /* Logically top aligned */
-    padding-top: 60px;
-    /* Push everything down (Increased) */
+    padding-top: 50px;
+    /* Adjusted (was 60px) */
     z-index: 200;
     background: transparent;
     pointer-events: none;
