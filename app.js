@@ -1,9 +1,3 @@
-// Global Error Handler for Debugging
-window.onerror = function (msg, url, line, col, error) {
-    alert("Error: " + msg + "\nLine: " + line);
-    return false;
-};
-
 // State
 // Helper for safe parsing
 function safeParse(key, def) {

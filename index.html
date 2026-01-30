@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
-    <link rel="stylesheet" href="style.css?v=49.3">
+    <link rel="stylesheet" href="style.css?v=49.4">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -22,8 +22,13 @@
 
     <!-- Error Handler for Debugging -->
     <script>
+        window.onerror = function (msg, url, line, col, error) {
+            alert("Global Error:\n" + msg + "\nLine: " + line + "\nURL: " + url);
+            return false;
+        };
+
         // Force Version Check
-        const CURRENT_VERSION = '49.3';
+        const CURRENT_VERSION = '49.4';
         if (localStorage.getItem('app_version') !== CURRENT_VERSION) {
             localStorage.setItem('app_version', CURRENT_VERSION);
             if ('serviceWorker' in navigator) {
