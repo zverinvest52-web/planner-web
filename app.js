@@ -160,7 +160,7 @@ function setupEventListeners() {
     };
 
     // View -> Edit
-    document.getElementById('btn-view-edit').onclick = () => {
+    document.getElementById('btn-view-edit-top').onclick = () => {
         document.getElementById('modal-view-task').classList.add('hidden');
         if (currentEditingTaskId) {
             const task = tasks.find(t => t.id === currentEditingTaskId);
