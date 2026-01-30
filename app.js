@@ -153,88 +153,116 @@ function initSync() {
 
 function setupEventListeners() {
     try {
-        // Note: Add Task button uses inline onclick="openAddTaskModal()" in HTML
-        // No separate event binding needed here for the FAB button
-
         // Close Modal Add
-        document.getElementById('close-add-task').onclick = () => {
-            modalAdd.classList.add('hidden');
-        };
+        const btnCloseAdd = document.getElementById('close-add-task');
+        if (btnCloseAdd) {
+            btnCloseAdd.onclick = () => {
+                const m = document.getElementById('modal-add-task');
+                if (m) m.classList.add('hidden');
+            };
+        }
 
         // Close Modal View
-        document.getElementById('btn-close-view').onclick = () => {
-            document.getElementById('modal-view-task').classList.add('hidden');
-        };
+        const btnCloseView = document.getElementById('btn-close-view');
+        if (btnCloseView) {
+            btnCloseView.onclick = () => {
+                const m = document.getElementById('modal-view-task');
+                if (m) m.classList.add('hidden');
+            };
+        }
 
         // View -> Edit
-        document.getElementById('btn-view-edit-top').onclick = () => {
-            document.getElementById('modal-view-task').classList.add('hidden');
-            if (currentEditingTaskId) {
-                const task = tasks.find(t => t.id === currentEditingTaskId);
-                if (task) openEditModal(task);
-            }
-        };
+        const btnEditTop = document.getElementById('btn-view-edit-top');
+        if (btnEditTop) {
+            btnEditTop.onclick = () => {
+                const mView = document.getElementById('modal-view-task');
+                if (mView) mView.classList.add('hidden');
+
+                if (currentEditingTaskId) {
+                    const task = tasks.find(t => t.id === currentEditingTaskId);
+                    if (task) openEditModal(task);
+                }
+            };
+        }
 
         // View -> Complete
-        document.getElementById('btn-view-complete').onclick = () => {
-            if (currentEditingTaskId) {
-                toggleTask(currentEditingTaskId);
-                document.getElementById('modal-view-task').classList.add('hidden');
-            }
-        };
+        const btnViewComplete = document.getElementById('btn-view-complete');
+        if (btnViewComplete) {
+            btnViewComplete.onclick = () => {
+                if (currentEditingTaskId) {
+                    toggleTask(currentEditingTaskId);
+                    const mView = document.getElementById('modal-view-task');
+                    if (mView) mView.classList.add('hidden');
+                }
+            };
+        }
 
         // View -> Delete
-        document.getElementById('btn-view-delete').onclick = () => {
-            if (currentEditingTaskId) {
-                if (confirm("Удалить задачу?")) {
-                    tasks = tasks.filter(t => t.id !== currentEditingTaskId);
-                    save();
-                    currentEditingTaskId = null;
-                    renderStack();
-                    document.getElementById('modal-view-task').classList.add('hidden');
+        const btnViewDelete = document.getElementById('btn-view-delete');
+        if (btnViewDelete) {
+            btnViewDelete.onclick = () => {
+                if (currentEditingTaskId) {
+                    if (confirm("Удалить задачу?")) {
+                        tasks = tasks.filter(t => t.id !== currentEditingTaskId);
+                        save();
+                        currentEditingTaskId = null;
+                        renderStack();
+                        const mView = document.getElementById('modal-view-task');
+                        if (mView) mView.classList.add('hidden');
+                    }
                 }
-            }
-        };
+            };
+        }
 
         // Save Task
-        document.getElementById('btn-save-task').onclick = () => {
-            const title = document.getElementById('input-title').value.trim();
-            if (!title) return;
+        const btnSaveTask = document.getElementById('btn-save-task');
+        if (btnSaveTask) {
+            btnSaveTask.onclick = () => {
+                const titleInput = document.getElementById('input-title');
+                const title = titleInput ? titleInput.value.trim() : '';
 
-            if (currentEditingTaskId) {
-                // Edit
-                const taskIndex = tasks.findIndex(t => t.id === currentEditingTaskId);
-                if (taskIndex > -1) {
-                    tasks[taskIndex] = {
-                        ...tasks[taskIndex],
+                if (!title) {
+                    alert('Введите название задачи');
+                    return;
+                }
+
+                if (currentEditingTaskId) {
+                    // Edit
+                    const taskIndex = tasks.findIndex(t => t.id === currentEditingTaskId);
+                    if (taskIndex > -1) {
+                        tasks[taskIndex] = {
+                            ...tasks[taskIndex],
+                            title: title,
+                            description: document.getElementById('input-desc').value,
+                            category: selectedCategory,
+                            tags: document.getElementById('input-tags').value,
+                            time: document.getElementById('input-time').value,
+                            date: selectedDate,
+                            photos: currentPhotos // Save photos
+                        };
+                    }
+                } else {
+                    // Create
+                    const newTask = {
+                        id: Date.now().toString(),
                         title: title,
                         description: document.getElementById('input-desc').value,
                         category: selectedCategory,
                         tags: document.getElementById('input-tags').value,
                         time: document.getElementById('input-time').value,
                         date: selectedDate,
-                        photos: currentPhotos // Save photos
+                        photos: currentPhotos, // Save photos
+                        completed: false
                     };
+                    tasks.push(newTask);
                 }
-            } else {
-                // Create
-                const newTask = {
-                    id: Date.now().toString(),
-                    title: title,
-                    description: document.getElementById('input-desc').value,
-                    category: selectedCategory,
-                    tags: document.getElementById('input-tags').value,
-                    time: document.getElementById('input-time').value,
-                    date: selectedDate,
-                    photos: currentPhotos, // Save photos
-                    completed: false
-                };
-                tasks.push(newTask);
-            }
 
-            save();
-            modalAdd.classList.add('hidden');
-        };
+                save();
+                renderStack(); // Ensure UI updates
+                const mAdd = document.getElementById('modal-add-task');
+                if (mAdd) mAdd.classList.add('hidden');
+            };
+        }
 
         // Photo Handlers
         const btnAddPhoto = document.getElementById('btn-add-photo');
@@ -243,16 +271,26 @@ function setupEventListeners() {
         if (btnAddPhoto && inputPhoto) {
             btnAddPhoto.onclick = () => inputPhoto.click();
 
-            // Simple compression by not touching it? LocalStorage has 5MB limit. 
-            // ideally we should resize. For now raw base64.
-            currentPhotos.push(evt.target.result);
-            renderPhotoPreviews();
-        };
-        reader.readAsDataURL(file);
-    });
-    inputPhoto.value = ''; // Reset
-};
+            inputPhoto.onchange = async (e) => {
+                if (e.target.files && e.target.files.length > 0) {
+                    for (let i = 0; i < e.target.files.length; i++) {
+                        const file = e.target.files[i];
+                        const reader = new FileReader();
+                        reader.onload = (evt) => {
+                            currentPhotos.push(evt.target.result);
+                            renderPhotoPreviews();
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                }
+                inputPhoto.value = ''; // Reset
+            };
+        }
+    } catch (e) {
+        console.error("Setup Listeners Error:", e);
+        alert("Setup Error: " + e.message);
     }
+}
 
 // Delete Task Button
 const btnDelete = document.getElementById('btn-delete-task');
