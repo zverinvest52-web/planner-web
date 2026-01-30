@@ -47,19 +47,16 @@
         <!-- Header -->
         <header class="main-header">
             <div class="header-row">
-                <div class="header-row">
-                    <div class="date-container-center">
-                        <h1 id="header-date">Сегодня <span id="header-status-dot" class="status-dot"></span></h1>
-                    </div>
-                    <button class="btn-icon-header" id="btn-search-toggle">
-                        <i class="fas fa-search"></i>
-                    </button>
+                <div class="date-container-center">
+                    <h1 id="header-date">Сегодня <span id="header-status-dot" class="status-dot"></span></h1>
                 </div>
-                <!-- Collapsible Search -->
-                <div class="search-bar hidden" id="search-bar-container">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="global-search" placeholder="Поиск задач...">
-                </div>
+                <!-- Search Removed -->
+            </div>
+            <!-- Collapsible Search Removed from view -->
+            <div class="search-bar hidden" id="search-bar-container">
+                <i class="fas fa-search"></i>
+                <input type="text" id="global-search" placeholder="Поиск задач...">
+            </div>
         </header>
 
         <!-- Category Stack -->
@@ -255,10 +252,10 @@
 
     <!-- Scripts -->
     <!-- Scripts -->
-    <script src="app.js?v=51.6"></script>
+    <script src="app.js?v=51.7"></script>
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js?v=51.6').then(reg => {
+            navigator.serviceWorker.register('sw.js?v=51.7').then(reg => {
                 reg.update();
             });
         }
