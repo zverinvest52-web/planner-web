@@ -871,93 +871,98 @@ function formatDate(isoStr) {
 }
 
 function openTaskDetails(task) {
-    currentEditingTaskId = task.id;
+    try {
+        currentEditingTaskId = task.id;
 
-    // Populate VIEW Modal
-    document.getElementById('view-title').innerText = task.title;
-    document.getElementById('view-category-badge').innerText = task.category || 'ОБЩИЕ';
+        // Populate VIEW Modal
+        document.getElementById('view-title').innerText = task.title;
+        document.getElementById('view-category-badge').innerText = task.category || 'ОБЩИЕ';
 
-    // Time
-    const timeEl = document.getElementById('view-time-container');
-    if (task.time) {
-        timeEl.classList.remove('hidden');
-        document.getElementById('view-time-val').innerText = task.time;
-    } else {
-        timeEl.classList.add('hidden');
-    }
+        // Time
+        const timeEl = document.getElementById('view-time-container');
+        if (task.time) {
+            timeEl.classList.remove('hidden');
+            document.getElementById('view-time-val').innerText = task.time;
+        } else {
+            timeEl.classList.add('hidden');
+        }
 
-    // Date
-    const dateEl = document.getElementById('view-date-container');
-    if (task.date) {
-        dateEl.classList.remove('hidden');
-        const d = new Date(task.date);
-        document.getElementById('view-date-val').innerText = d.toLocaleDateString('ru-RU');
-    } else {
-        dateEl.classList.add('hidden');
-    }
+        // Date
+        const dateEl = document.getElementById('view-date-container');
+        if (task.date) {
+            dateEl.classList.remove('hidden');
+            const d = new Date(task.date);
+            document.getElementById('view-date-val').innerText = d.toLocaleDateString('ru-RU');
+        } else {
+            dateEl.classList.add('hidden');
+        }
 
-    // Desc
-    const descBlock = document.getElementById('view-desc-block');
-    if (task.description) {
-        descBlock.classList.remove('hidden');
-        document.getElementById('view-desc-text').innerText = task.description;
-    } else {
-        descBlock.classList.add('hidden');
-    }
+        // Desc
+        const descBlock = document.getElementById('view-desc-block');
+        if (task.description) {
+            descBlock.classList.remove('hidden');
+            document.getElementById('view-desc-text').innerText = task.description;
+        } else {
+            descBlock.classList.add('hidden');
+        }
 
-    // Tags
-    const tagsBlock = document.getElementById('view-tags-block');
-    if (task.tags) {
-        tagsBlock.classList.remove('hidden');
-        document.getElementById('view-tags-text').innerText = task.tags;
-    } else {
-        tagsBlock.classList.add('hidden');
-    }
+        // Tags
+        const tagsBlock = document.getElementById('view-tags-block');
+        if (task.tags) {
+            tagsBlock.classList.remove('hidden');
+            document.getElementById('view-tags-text').innerText = task.tags;
+        } else {
+            tagsBlock.classList.add('hidden');
+        }
 
-    // Gallery
-    const galleryBlock = document.getElementById('view-gallery-block');
-    const track = document.getElementById('view-gallery-track');
-    const dots = document.getElementById('view-gallery-dots');
-    track.innerHTML = '';
-    dots.innerHTML = '';
+        // Gallery
+        const galleryBlock = document.getElementById('view-gallery-block');
+        const track = document.getElementById('view-gallery-track');
+        const dots = document.getElementById('view-gallery-dots');
+        track.innerHTML = '';
+        dots.innerHTML = '';
 
-    if (task.photos && task.photos.length > 0) {
-        galleryBlock.classList.remove('hidden');
-        task.photos.forEach((src, idx) => {
-            // Slide
-            const slide = document.createElement('div');
-            slide.className = 'gallery-item';
-            slide.style.backgroundImage = `url('${src}')`;
-            track.appendChild(slide);
+        if (task.photos && task.photos.length > 0) {
+            galleryBlock.classList.remove('hidden');
+            task.photos.forEach((src, idx) => {
+                // Slide
+                const slide = document.createElement('div');
+                slide.className = 'gallery-item';
+                slide.style.backgroundImage = `url('${src}')`;
+                track.appendChild(slide);
 
-            // Dot
-            if (task.photos.length > 1) {
-                const dot = document.createElement('div');
-                dot.className = `dot ${idx === 0 ? 'active' : ''}`;
-                dots.appendChild(dot);
-            }
-        });
-
-        // Scroll Listener for dots
-        track.onscroll = () => {
-            const width = track.offsetWidth;
-            const idx = Math.round(track.scrollLeft / width);
-            Array.from(dots.children).forEach((d, i) => {
-                d.className = `dot ${i === idx ? 'active' : ''}`;
+                // Dot
+                if (task.photos.length > 1) {
+                    const dot = document.createElement('div');
+                    dot.className = `dot ${idx === 0 ? 'active' : ''}`;
+                    dots.appendChild(dot);
+                }
             });
-        };
 
-    } else {
-        galleryBlock.classList.add('hidden');
+            // Scroll Listener for dots
+            track.onscroll = () => {
+                const width = track.offsetWidth;
+                const idx = Math.round(track.scrollLeft / width);
+                Array.from(dots.children).forEach((d, i) => {
+                    d.className = `dot ${i === idx ? 'active' : ''}`;
+                });
+            };
+
+        } else {
+            galleryBlock.classList.add('hidden');
+        }
+
+        // Check complete status to style button differently?
+        // For now simple Toggle logic
+        const btnComplete = document.getElementById('btn-view-complete');
+        btnComplete.innerText = task.completed ? "ВЕРНУТЬ" : "ВЫПОЛНИТЬ";
+        btnComplete.style.background = task.completed ? "#8E8E93" : "#FF3B30";
+
+        document.getElementById('modal-view-task').classList.remove('hidden');
+    } catch (e) {
+        console.error(e);
+        alert('Ошибка: ' + e.message);
     }
-
-    // Check complete status to style button differently?
-    // For now simple Toggle logic
-    const btnComplete = document.getElementById('btn-view-complete');
-    btnComplete.innerText = task.completed ? "ВЕРНУТЬ" : "ВЫПОЛНИТЬ";
-    btnComplete.style.background = task.completed ? "#8E8E93" : "#FF3B30";
-
-    document.getElementById('modal-view-task').classList.remove('hidden');
 }
 
 function openEditModal(task) {
@@ -1025,6 +1030,7 @@ function renderPhotoPreviews() {
 }
 
 window.openTaskDetails = openTaskDetails;
+window.openEditModal = openEditModal;
 
 // --- Category Management Functions ---
 
