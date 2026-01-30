@@ -840,6 +840,7 @@ function renderTasksForCategory(container, taskList) {
             toggleTask(task.id);
         });
 
+        const contentArea = div.querySelector('.task-content');
         contentArea.addEventListener('click', (e) => {
             e.stopPropagation();
             // console.log("Click task:", task.title);
