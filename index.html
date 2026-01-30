@@ -95,7 +95,64 @@
 
     </div>
 
-    <!-- Modals -->
+    <!-- View Task Modal (New Design) -->
+    <div id="modal-view-task" class="modal-overlay hidden">
+        <div class="modal-card">
+            <!-- Header Actions -->
+            <div class="modal-view-header">
+                <div class="badge-category" id="view-category-badge">ОБЩИЕ</div>
+                <button id="btn-close-view" class="btn-icon circle-btn"><i class="fas fa-times"></i></button>
+            </div>
+
+            <div class="view-scroll-content">
+                <!-- Title -->
+                <h1 id="view-title" class="view-task-title">Название задачи</h1>
+
+                <!-- Time & Date -->
+                <div class="view-meta-row">
+                    <div id="view-time-container" class="meta-pill hidden">
+                        <i class="far fa-clock"></i> <span id="view-time-val"></span>
+                    </div>
+                    <div id="view-date-container" class="meta-pill hidden">
+                        <i class="far fa-calendar"></i> <span id="view-date-val"></span>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div id="view-desc-block" class="view-block hidden">
+                    <label>Описание</label>
+                    <div id="view-desc-text" class="view-text-content"></div>
+                </div>
+
+                <!-- Tags -->
+                <div id="view-tags-block" class="view-block hidden">
+                    <label>Теги</label>
+                    <div id="view-tags-text" class="view-tags-content"></div>
+                </div>
+
+                <!-- Gallery -->
+                <div id="view-gallery-block" class="view-block hidden">
+                    <label>Вложения</label>
+                    <div class="gallery-container">
+                        <div class="gallery-track" id="view-gallery-track">
+                            <!-- Photos injected via JS -->
+                        </div>
+                        <div class="gallery-indicators" id="view-gallery-dots"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Actions -->
+            <div class="view-footer">
+                <button id="btn-view-edit" class="btn-text">
+                    <i class="fas fa-pen"></i> Изменить
+                </button>
+                <div class="spacer"></div>
+                <button id="btn-view-delete" class="btn-text-danger">Удалить</button>
+                <button id="btn-view-complete" class="btn-primary-red">ВЫПОЛНИТЬ</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Add Task Modal -->
     <div class="modal overlay hidden" id="modal-add-task">

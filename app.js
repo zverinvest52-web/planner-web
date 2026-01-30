@@ -149,9 +149,44 @@ function setupEventListeners() {
     // Note: Add Task button uses inline onclick="openAddTaskModal()" in HTML
     // No separate event binding needed here for the FAB button
 
-    // Close Modal
+    // Close Modal Add
     document.getElementById('close-add-task').onclick = () => {
         modalAdd.classList.add('hidden');
+    };
+
+    // Close Modal View
+    document.getElementById('btn-close-view').onclick = () => {
+        document.getElementById('modal-view-task').classList.add('hidden');
+    };
+
+    // View -> Edit
+    document.getElementById('btn-view-edit').onclick = () => {
+        document.getElementById('modal-view-task').classList.add('hidden');
+        if (currentEditingTaskId) {
+            const task = tasks.find(t => t.id === currentEditingTaskId);
+            if (task) openEditModal(task);
+        }
+    };
+
+    // View -> Complete
+    document.getElementById('btn-view-complete').onclick = () => {
+        if (currentEditingTaskId) {
+            toggleTask(currentEditingTaskId);
+            document.getElementById('modal-view-task').classList.add('hidden');
+        }
+    };
+
+    // View -> Delete
+    document.getElementById('btn-view-delete').onclick = () => {
+        if (currentEditingTaskId) {
+            if (confirm("Удалить задачу?")) {
+                tasks = tasks.filter(t => t.id !== currentEditingTaskId);
+                save();
+                currentEditingTaskId = null;
+                renderStack();
+                document.getElementById('modal-view-task').classList.add('hidden');
+            }
+        }
     };
 
     // Save Task
@@ -837,39 +872,105 @@ function formatDate(isoStr) {
 
 function openTaskDetails(task) {
     currentEditingTaskId = task.id;
+
+    // Populate VIEW Modal
+    document.getElementById('view-title').innerText = task.title;
+    document.getElementById('view-category-badge').innerText = task.category || 'ОБЩИЕ';
+
+    // Time
+    const timeEl = document.getElementById('view-time-container');
+    if (task.time) {
+        timeEl.classList.remove('hidden');
+        document.getElementById('view-time-val').innerText = task.time;
+    } else {
+        timeEl.classList.add('hidden');
+    }
+
+    // Date
+    const dateEl = document.getElementById('view-date-container');
+    if (task.date) {
+        dateEl.classList.remove('hidden');
+        const d = new Date(task.date);
+        document.getElementById('view-date-val').innerText = d.toLocaleDateString('ru-RU');
+    } else {
+        dateEl.classList.add('hidden');
+    }
+
+    // Desc
+    const descBlock = document.getElementById('view-desc-block');
+    if (task.description) {
+        descBlock.classList.remove('hidden');
+        document.getElementById('view-desc-text').innerText = task.description;
+    } else {
+        descBlock.classList.add('hidden');
+    }
+
+    // Tags
+    const tagsBlock = document.getElementById('view-tags-block');
+    if (task.tags) {
+        tagsBlock.classList.remove('hidden');
+        document.getElementById('view-tags-text').innerText = task.tags;
+    } else {
+        tagsBlock.classList.add('hidden');
+    }
+
+    // Gallery
+    const galleryBlock = document.getElementById('view-gallery-block');
+    const track = document.getElementById('view-gallery-track');
+    const dots = document.getElementById('view-gallery-dots');
+    track.innerHTML = '';
+    dots.innerHTML = '';
+
+    if (task.photos && task.photos.length > 0) {
+        galleryBlock.classList.remove('hidden');
+        task.photos.forEach((src, idx) => {
+            // Slide
+            const slide = document.createElement('div');
+            slide.className = 'gallery-item';
+            slide.style.backgroundImage = `url('${src}')`;
+            track.appendChild(slide);
+
+            // Dot
+            if (task.photos.length > 1) {
+                const dot = document.createElement('div');
+                dot.className = `dot ${idx === 0 ? 'active' : ''}`;
+                dots.appendChild(dot);
+            }
+        });
+
+        // Scroll Listener for dots
+        track.onscroll = () => {
+            const width = track.offsetWidth;
+            const idx = Math.round(track.scrollLeft / width);
+            Array.from(dots.children).forEach((d, i) => {
+                d.className = `dot ${i === idx ? 'active' : ''}`;
+            });
+        };
+
+    } else {
+        galleryBlock.classList.add('hidden');
+    }
+
+    // Check complete status to style button differently?
+    // For now simple Toggle logic
+    const btnComplete = document.getElementById('btn-view-complete');
+    btnComplete.innerText = task.completed ? "ВЕРНУТЬ" : "ВЫПОЛНИТЬ";
+    btnComplete.style.background = task.completed ? "#8E8E93" : "#FF3B30";
+
+    document.getElementById('modal-view-task').classList.remove('hidden');
+}
+
+function openEditModal(task) {
+    currentEditingTaskId = task.id;
     const modalTitle = document.getElementById('modal-title');
     const btnSave = document.getElementById('btn-save-task');
-    const btnDelete = document.getElementById('btn-delete-task');
+    const btnDelete = document.getElementById('btn-delete-task'); // Hide logic in edit
 
-    const modalBody = document.querySelector('#modal-add-task .modal-body');
-
-    // Make it look like "View Mode" if existing task
-    modalTitle.innerText = task.title; // Show title in header? No, header is fixed usually.
-    // Actually per screenshot: Header says "НОВАЯ ЗАДАЧА" for new.
-    // For view: just show the task name centered?
-    // Let's stick to standard edit fields but cleaner.
-
-    modalTitle.innerText = "";
-    document.getElementById('input-title').value = task.title;
-    document.getElementById('input-desc').value = task.description || '';
-
-    // Switch Save Button to "ВЫПОЛНИТЬ" (Red)
-    btnSave.innerText = "ВЫПОЛНИТЬ";
-    btnSave.style.background = "#FF3B30"; // Red
-    btnSave.onclick = () => {
-        // Logic to complete? Or just save?
-        // For now save as is
-        // Or maybe toggle complete?
-        // Let's keep save logic for now but style it red.
-        toggleTask(task.id);
-        document.getElementById('modal-add-task').classList.add('hidden');
-    };
-
-    if (btnDelete) btnDelete.classList.remove('hidden');
+    modalTitle.innerText = "РЕДАКТИРОВАНИЕ";
 
     document.getElementById('input-title').value = task.title;
     document.getElementById('input-desc').value = task.description || '';
-    document.getElementById('input-tags').value = (task.tags || []).toString();
+    document.getElementById('input-tags').value = task.tags || '';
     document.getElementById('input-time').value = task.time || '';
 
     selectedCategory = task.category;
@@ -877,10 +978,14 @@ function openTaskDetails(task) {
     selectedDate = task.date;
 
     // Load photos
-    currentPhotos = task.photos || [];
+    currentPhotos = task.photos ? [...task.photos] : [];
     renderPhotoPreviews();
 
     updateDateLabel();
+
+    btnSave.innerText = "СОХРАНИТЬ";
+    btnSave.style.background = "var(--text-dark)";
+    if (btnDelete) btnDelete.classList.add('hidden'); // Delete is in View menu now
 
     modalAdd.classList.remove('hidden');
 }
