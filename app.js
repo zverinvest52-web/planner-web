@@ -364,7 +364,7 @@ document.addEventListener('click', (e) => {
         }
     }
 });
-}
+
 
 function renderManageCats() {
     const list = document.getElementById('cats-list-container');
