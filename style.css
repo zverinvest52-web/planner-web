@@ -62,13 +62,19 @@ body {
 /* Header */
 .main-header {
     padding: 0 16px;
-    height: 60px;
-    min-height: 60px;
+    height: 100px;
+    /* Increased height to allow drop */
+    min-height: 100px;
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
+    /* Logically top aligned */
+    padding-top: 40px;
+    /* Push everything down */
     z-index: 200;
     background: transparent;
+    pointer-events: none;
+    /* Let clicks pass through empty areas */
 }
 
 .header-row {
@@ -85,9 +91,9 @@ body {
 
 #header-date {
     font-size: 20px;
-    /* Reduced from 32px */
     font-weight: 700;
-    margin: 30px 0 0 0;
+    margin: 0;
+    /* Margin removed, controlled by header padding */
     width: 100%;
     justify-content: center;
     display: flex;
