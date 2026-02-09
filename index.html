@@ -20,6 +20,12 @@
 
 <body class="light-theme">
 
+    <!-- Pull to Refresh Indicator -->
+    <div class="pull-indicator" id="pull-indicator">
+        <i class="fas fa-sync-alt pull-icon"></i>
+        <span class="pull-text" id="pull-text">Потяните для обновления</span>
+    </div>
+
     <!-- Error Handler for Debugging -->
     <script>
         window.onerror = function (msg, url, line, col, error) {
@@ -166,8 +172,24 @@
                 <!-- STEP 1: TITLE & DESCRIPTION -->
                 <div class="wizard-step" id="wizard-step-1">
                     <div class="step-header">Что нужно сделать?</div>
-                    <input type="text" id="input-title" class="input-large" placeholder="Название задачи"
-                        autocomplete="off">
+                    <div class="title-input-wrapper">
+                        <input type="text" id="input-title" class="input-large" placeholder="Название задачи"
+                            autocomplete="off">
+                        <button class="voice-input-btn" id="btn-voice-input" title="Голосовой ввод">
+                            <i class="fas fa-microphone"></i>
+                        </button>
+                    </div>
+
+                    <!-- Quick Templates -->
+                    <div class="templates-section">
+                        <div class="templates-label">Быстрые шаблоны:</div>
+                        <div class="chips-row" id="templates-container">
+                            <button class="chip" onclick="applyTemplate('Купить продукты')">🛒 Продукты</button>
+                            <button class="chip" onclick="applyTemplate('Позвонить в банк')">📞 Звонок</button>
+                            <button class="chip" onclick="applyTemplate('Встреча')">👥 Встреча</button>
+                            <button class="chip" onclick="applyTemplate('Спорт')">💪 Спорт</button>
+                        </div>
+                    </div>
 
                     <div class="desc-box">
                         <textarea id="input-desc" class="input-area" placeholder="Описание / Комментарий"></textarea>
@@ -281,12 +303,26 @@
             </div>
             <div class="modal-body">
                 <div id="cats-list-container" style="max-height: 300px; overflow-y: auto; margin-bottom: 20px;"></div>
-                <div class="input-row" style="border:none; padding:0;">
-                    <input type="text" id="input-new-cat" class="input-std" placeholder="Название..."
+                <div class="input-row" style="border:none; padding:0; margin-bottom: 12px;">
+                    <input type="text" id="input-new-cat" class="input-std" placeholder="Название (можно добавить эмодзи)"
                         style="margin-bottom:0; flex:1;">
                     <button class="dock-fab" id="btn-add-cat"
                         style="width:40px; height:40px; font-size:16px; margin-left:10px; box-shadow:none;"><i
                             class="fas fa-plus"></i></button>
+                </div>
+                <!-- Emoji picker -->
+                <div class="emoji-picker">
+                    <div class="emoji-label">Быстрые эмодзи:</div>
+                    <div class="emoji-grid">
+                        <span class="emoji-btn" onclick="addEmoji('🏠')">🏠</span>
+                        <span class="emoji-btn" onclick="addEmoji('💼')">💼</span>
+                        <span class="emoji-btn" onclick="addEmoji('🎯')">🎯</span>
+                        <span class="emoji-btn" onclick="addEmoji('💡')">💡</span>
+                        <span class="emoji-btn" onclick="addEmoji('❤️')">❤️</span>
+                        <span class="emoji-btn" onclick="addEmoji('⚡')">⚡</span>
+                        <span class="emoji-btn" onclick="addEmoji('🎨')">🎨</span>
+                        <span class="emoji-btn" onclick="addEmoji('📚')">📚</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -298,6 +334,89 @@
                 <button class="btn-text" id="btn-cancel-date">Отмена</button>
                 <button class="btn-text accent" id="btn-confirm-date">ВЫБРАТЬ</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Statistics Modal -->
+    <div class="modal overlay hidden" id="modal-statistics">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2>СТАТИСТИКА</h2>
+                <button class="close-btn" id="close-stats"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="stats-container">
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-total">0</div>
+                    <div class="stat-label">Всего задач</div>
+                </div>
+                <div class="stat-card success">
+                    <div class="stat-value" id="stat-completed">0</div>
+                    <div class="stat-label">Выполнено</div>
+                </div>
+                <div class="stat-card warning">
+                    <div class="stat-value" id="stat-today">0</div>
+                    <div class="stat-label">На сегодня</div>
+                </div>
+                <div class="stat-card danger">
+                    <div class="stat-value" id="stat-overdue">0</div>
+                    <div class="stat-label">Просрочено</div>
+                </div>
+            </div>
+            <div class="stats-progress">
+                <div class="progress-label">Прогресс выполнения</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="stat-progress"></div>
+                </div>
+                <div class="progress-percent" id="stat-percent">0%</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Onboarding Modal -->
+    <div class="modal overlay hidden" id="modal-onboarding">
+        <div class="modal-card" style="max-width: 350px;">
+            <div class="modal-header">
+                <h2>Добро пожаловать!</h2>
+            </div>
+            <div class="onboarding-content">
+                <div class="onboarding-step">
+                    <div class="onboarding-icon">➕</div>
+                    <div class="onboarding-text">
+                        <strong>Создание задач</strong><br>
+                        Нажмите красную кнопку + внизу экрана
+                    </div>
+                </div>
+                <div class="onboarding-step">
+                    <div class="onboarding-icon">✅</div>
+                    <div class="onboarding-text">
+                        <strong>Выполнение</strong><br>
+                        Нажмите на кружок слева от задачи или свайпните вправо
+                    </div>
+                </div>
+                <div class="onboarding-step">
+                    <div class="onboarding-icon">👈</div>
+                    <div class="onboarding-text">
+                        <strong>Удаление</strong><br>
+                        Свайпните задачу влево для удаления
+                    </div>
+                </div>
+                <div class="onboarding-step">
+                    <div class="onboarding-icon">📊</div>
+                    <div class="onboarding-text">
+                        <strong>Статистика</strong><br>
+                        Нажмите на иконку графиков в меню
+                    </div>
+                </div>
+            </div>
+            <button class="btn-primary" id="btn-close-onboarding">Понятно!</button>
+        </div>
+    </div>
+
+    <!-- Undo Toast -->
+    <div id="undo-toast" class="undo-toast hidden">
+        <div class="toast-content">
+            <span id="toast-message">Действие выполнено</span>
+            <button id="undo-btn" class="undo-btn">Отменить (<span id="undo-countdown">5</span>с)</button>
         </div>
     </div>
 

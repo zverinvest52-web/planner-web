@@ -54,14 +54,138 @@ const HEADER_HEIGHT_PX = 50;
 const HEADER_HEIGHT_REM = 3;
 const TOP_OFFSET_PX = 2; // Raised from 10 to 0
 
+// Undo State
+let lastAction = null;
+let undoTimeout = null;
+let countdownInterval = null;
+const UNDO_DELAY = 5000; // 5 seconds
+
+// ===== THEME INITIALIZATION =====
+function initTheme() {
+    try {
+        if (window.Telegram?.WebApp) {
+            const tg = window.Telegram.WebApp;
+            tg.ready();
+            tg.expand();
+
+            // Get theme from Telegram
+            const colorScheme = tg.colorScheme || 'light';
+            document.body.classList.toggle('dark-theme', colorScheme === 'dark');
+
+            // Listen for theme changes
+            if (tg.onEvent) {
+                tg.onEvent('themeChanged', () => {
+                    const newScheme = tg.colorScheme;
+                    document.body.classList.toggle('dark-theme', newScheme === 'dark');
+                    hapticImpact('light');
+                });
+            }
+
+            // Set header color
+            tg.setHeaderColor(colorScheme === 'dark' ? '#1C1C1E' : '#F5F5F7');
+
+            console.log("Theme initialized:", colorScheme);
+        }
+    } catch (e) {
+        console.warn("Theme init failed:", e);
+    }
+}
+
+// ===== PULL TO REFRESH =====
+let pullStartY = 0;
+let pullCurrentY = 0;
+let isPulling = false;
+
+function initPullToRefresh() {
+    const indicator = document.getElementById('pull-indicator');
+    const pullText = document.getElementById('pull-text');
+    let isRefreshing = false;
+
+    document.addEventListener('touchstart', (e) => {
+        if (window.scrollY === 0 && !isRefreshing) {
+            pullStartY = e.touches[0].pageY;
+        }
+    }, { passive: true });
+
+    document.addEventListener('touchmove', (e) => {
+        if (window.scrollY === 0 && !isRefreshing && pullStartY) {
+            pullCurrentY = e.touches[0].pageY;
+            const pullDistance = pullCurrentY - pullStartY;
+
+            if (pullDistance > 0) {
+                isPulling = true;
+                const resistance = Math.min(pullDistance * 0.5, 100);
+
+                if (resistance > 60) {
+                    indicator.classList.add('visible');
+                    pullText.textContent = 'Отпустите для обновления';
+                } else {
+                    indicator.classList.remove('visible');
+                    pullText.textContent = 'Потяните для обновления';
+                }
+            }
+        }
+    }, { passive: true });
+
+    document.addEventListener('touchend', async () => {
+        if (isPulling && !isRefreshing) {
+            isPulling = false;
+            pullStartY = 0;
+
+            if (indicator.classList.contains('visible')) {
+                isRefreshing = true;
+                indicator.classList.add('refreshing');
+                pullText.textContent = 'Обновление...';
+
+                hapticImpact('medium');
+
+                // Force sync with Firebase
+                if (tgUserId && db) {
+                    try {
+                        const ref = db.ref('users/' + tgUserId + '/monitor');
+                        const snapshot = await ref.once('value');
+                        const val = snapshot.val();
+
+                        if (val) {
+                            if (val.tasks) tasks = val.tasks || [];
+                            if (val.categories) categories = val.categories || [];
+
+                            localStorage.setItem('planner_tasks', JSON.stringify(tasks));
+                            localStorage.setItem('planner_categories', JSON.stringify(categories));
+
+                            renderStack();
+                            if (currentTab === 'cats') renderManageCats();
+                        }
+                    } catch (e) {
+                        console.error("Sync error:", e);
+                    }
+                }
+
+                // Reset after delay
+                setTimeout(() => {
+                    isRefreshing = false;
+                    indicator.classList.remove('visible', 'refreshing');
+                    pullText.textContent = 'Потяните для обновления';
+                }, 1000);
+            }
+        }
+    });
+}
+
 // Init
 document.addEventListener('DOMContentLoaded', () => {
+    initTheme(); // Initialize theme
+    initPullToRefresh(); // Initialize pull to refresh
     updateHeaderDate();
     setupEventListeners(); // Enable UI interaction
 
     initSync(); // Start Sync
     switchTab('home'); // Force correct view state
     renderStack();
+
+    // Show onboarding for first-time users
+    showOnboarding();
+
     console.log("App v48.0 loaded successfully");
 });
 
@@ -336,14 +460,29 @@ function setupEventListeners() {
         if (btnViewDelete) {
             btnViewDelete.onclick = () => {
                 if (currentEditingTaskId) {
-                    if (confirm("Удалить задачу?")) {
-                        tasks = tasks.filter(t => t.id !== currentEditingTaskId);
+                    // Find and store task before deletion
+                    const taskToDelete = tasks.find(t => t.id === currentEditingTaskId);
+                    if (!taskToDelete) return;
+
+                    const taskIndex = tasks.findIndex(t => t.id === currentEditingTaskId);
+
+                    // Delete task
+                    tasks = tasks.filter(t => t.id !== currentEditingTaskId);
+                    save();
+                    currentEditingTaskId = null;
+                    renderStack();
+                    const mView = document.getElementById('modal-view-task');
+                    if (mView) mView.classList.add('hidden');
+
+                    hapticImpact('heavy');
+
+                    // Show undo toast
+                    showUndoToast('Задача удалена', () => {
+                        // Undo: restore task
+                        tasks.splice(taskIndex, 0, taskToDelete);
                         save();
-                        currentEditingTaskId = null;
                         renderStack();
-                        const mView = document.getElementById('modal-view-task');
-                        if (mView) mView.classList.add('hidden');
-                    }
+                    });
                 }
             };
         }
@@ -389,6 +528,7 @@ function setupEventListeners() {
                 }
 
                 save();
+                clearDraft(); // Clear draft after successful save
                 renderStack();
                 const mAdd = document.getElementById('modal-add-task');
                 if (mAdd) mAdd.classList.add('hidden');
@@ -422,6 +562,41 @@ function setupEventListeners() {
                 inputPhoto.value = '';
             };
         }
+
+        // Undo button handler
+        const undoBtn = document.getElementById('undo-btn');
+        if (undoBtn) {
+            undoBtn.onclick = performUndo;
+        }
+
+        // Close statistics modal
+        const closeStats = document.getElementById('close-stats');
+        if (closeStats) {
+            closeStats.onclick = () => {
+                document.getElementById('modal-statistics').classList.add('hidden');
+            };
+        }
+
+        // Close onboarding modal
+        const closeOnboarding = document.getElementById('btn-close-onboarding');
+        if (closeOnboarding) {
+            closeOnboarding.onclick = closeOnboarding;
+        }
+
+        // Draft autosave listeners
+        const titleInput = document.getElementById('input-title');
+        const descInput = document.getElementById('input-desc');
+        const timeInput = document.getElementById('input-time');
+
+        if (titleInput) titleInput.addEventListener('input', saveDraft);
+        if (descInput) descInput.addEventListener('input', saveDraft);
+        if (timeInput) timeInput.addEventListener('input', saveDraft);
+
+        // Voice input button
+        const voiceBtn = document.getElementById('btn-voice-input');
+        if (voiceBtn) {
+            voiceBtn.onclick = startVoiceInput;
+        }
     } catch (e) {
         console.error("Setup Listeners Error:", e);
         alert("Setup Error: " + e.message);
@@ -433,9 +608,28 @@ const btnDelete = document.getElementById('btn-delete-task');
 if (btnDelete) {
     btnDelete.onclick = () => {
         if (currentEditingTaskId) {
+            // Find and store task before deletion
+            const taskToDelete = tasks.find(t => t.id === currentEditingTaskId);
+            if (!taskToDelete) return;
+
+            const taskIndex = tasks.findIndex(t => t.id === currentEditingTaskId);
+
+            // Delete task
             tasks = tasks.filter(t => t.id !== currentEditingTaskId);
             save();
+            currentEditingTaskId = null;
             modalAdd.classList.add('hidden');
+            renderStack();
+
+            hapticImpact('heavy');
+
+            // Show undo toast
+            showUndoToast('Задача удалена', () => {
+                // Undo: restore task
+                tasks.splice(taskIndex, 0, taskToDelete);
+                save();
+                renderStack();
+            });
         }
     };
 }
@@ -538,6 +732,80 @@ function filterTasks(query) {
             }
         }
     });
+}
+
+// ===== UNDO FUNCTIONALITY =====
+function showUndoToast(message, undoCallback) {
+    const toast = document.getElementById('undo-toast');
+    const toastMessage = document.getElementById('toast-message');
+    const undoBtn = document.getElementById('undo-btn');
+    const countdownEl = document.getElementById('undo-countdown');
+
+    // Clear previous timeout
+    if (undoTimeout) {
+        clearTimeout(undoTimeout);
+    }
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+    }
+
+    // Set message and callback
+    toastMessage.textContent = message;
+    lastAction = undoCallback;
+
+    // Show toast
+    toast.classList.remove('hidden');
+
+    // Countdown
+    let secondsLeft = 5;
+    countdownEl.textContent = secondsLeft;
+
+    countdownInterval = setInterval(() => {
+        secondsLeft--;
+        countdownEl.textContent = secondsLeft;
+        if (secondsLeft <= 0) {
+            clearInterval(countdownInterval);
+        }
+    }, 1000);
+
+    // Auto hide after delay
+    undoTimeout = setTimeout(() => {
+        hideUndoToast();
+    }, UNDO_DELAY);
+}
+
+function hideUndoToast() {
+    const toast = document.getElementById('undo-toast');
+    toast.classList.add('hidden');
+
+    if (undoTimeout) {
+        clearTimeout(undoTimeout);
+        undoTimeout = null;
+    }
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+    }
+    lastAction = null;
+}
+
+function performUndo() {
+    if (lastAction) {
+        lastAction();
+        hideUndoToast();
+        hapticImpact('medium');
+    }
+}
+
+// Haptic feedback (Telegram WebApp API)
+function hapticImpact(style = 'medium') {
+    try {
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+            window.Telegram.WebApp.HapticFeedback.impactOccurred(style);
+        }
+    } catch (e) {
+        // Ignore errors
+    }
 }
 
 
@@ -968,8 +1236,26 @@ function renderTasksForCategory(container, taskList) {
         }
         else if (task.time) infoText = task.time;
 
+        // Create wrapper for swipe actions
+        const wrapper = document.createElement('div');
+        wrapper.className = 'task-item-wrapper';
+
+        // Swipe actions background
+        const swipeActions = document.createElement('div');
+        swipeActions.className = 'swipe-actions';
+        swipeActions.innerHTML = `
+            <div class="swipe-action-left" data-action="complete" data-task-id="${task.id}">
+                <i class="fas fa-check"></i>
+            </div>
+            <div class="swipe-action-right" data-action="delete" data-task-id="${task.id}">
+                <i class="fas fa-trash"></i>
+            </div>
+        `;
+
+        // Task item
         const div = document.createElement('div');
         div.className = `task-item ${isCompleted ? 'completed' : ''} ${isCritical ? 'critical' : ''}`;
+        div.dataset.taskId = task.id;
 
         div.innerHTML = `
             <div class="task-checkbox-area">
@@ -986,6 +1272,9 @@ function renderTasksForCategory(container, taskList) {
             ${infoText ? `<div class="info-pill">${infoText}</div>` : ''}
         `;
 
+        // Setup swipe handlers
+        setupSwipeHandlers(div, task);
+
         const checkboxArea = div.querySelector('.task-checkbox-area');
         checkboxArea.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -995,11 +1284,103 @@ function renderTasksForCategory(container, taskList) {
         const contentArea = div.querySelector('.task-content');
         contentArea.addEventListener('click', (e) => {
             e.stopPropagation();
-            // console.log("Click task:", task.title);
             openTaskDetails(task);
         });
 
-        container.appendChild(div);
+        // Swipe action handlers
+        swipeActions.querySelector('.swipe-action-left').addEventListener('click', () => {
+            if (!task.completed) toggleTask(task.id);
+        });
+
+        swipeActions.querySelector('.swipe-action-right').addEventListener('click', () => {
+            deleteTaskWithUndo(task.id);
+        });
+
+        wrapper.appendChild(swipeActions);
+        wrapper.appendChild(div);
+        container.appendChild(wrapper);
+    });
+}
+
+// ===== SWIPE HANDLERS =====
+function setupSwipeHandlers(element, task) {
+    let startX = 0;
+    let currentX = 0;
+    let isDragging = false;
+    const threshold = 80; // px to trigger action
+
+    element.addEventListener('touchstart', (e) => {
+        startX = e.touches[0].clientX;
+        isDragging = true;
+        element.classList.add('swiping');
+    }, { passive: true });
+
+    element.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        currentX = e.touches[0].clientX;
+        const deltaX = currentX - startX;
+
+        // Limit swipe distance
+        if (deltaX > 0) {
+            // Swipe right - show complete
+            element.style.transform = `translateX(${Math.min(deltaX, threshold)}px)`;
+        } else {
+            // Swipe left - show delete
+            element.style.transform = `translateX(${Math.max(deltaX, -threshold)}px)`;
+        }
+    }, { passive: true });
+
+    element.addEventListener('touchend', () => {
+        if (!isDragging) return;
+        isDragging = false;
+        element.classList.remove('swiping');
+
+        const deltaX = currentX - startX;
+
+        if (deltaX > threshold / 2) {
+            // Swiped right - complete
+            if (!task.completed) {
+                toggleTask(task.id);
+            }
+            resetPosition();
+        } else if (deltaX < -threshold / 2) {
+            // Swiped left - delete
+            deleteTaskWithUndo(task.id);
+            resetPosition();
+        } else {
+            // Reset position
+            resetPosition();
+        }
+
+        function resetPosition() {
+            element.style.transition = 'transform 0.3s ease';
+            element.style.transform = 'translateX(0)';
+            setTimeout(() => {
+                element.style.transition = '';
+            }, 300);
+        }
+
+        startX = 0;
+        currentX = 0;
+    });
+}
+
+function deleteTaskWithUndo(taskId) {
+    const taskToDelete = tasks.find(t => t.id === taskId);
+    if (!taskToDelete) return;
+
+    const taskIndex = tasks.findIndex(t => t.id === taskId);
+
+    tasks = tasks.filter(t => t.id !== taskId);
+    save();
+    renderStack();
+
+    hapticImpact('heavy');
+
+    showUndoToast('Задача удалена', () => {
+        tasks.splice(taskIndex, 0, taskToDelete);
+        save();
+        renderStack();
     });
 }
 
@@ -1007,8 +1388,26 @@ function renderTasksForCategory(container, taskList) {
 function toggleTask(id) {
     const t = tasks.find(x => x.id === id);
     if (t) {
+        const wasCompleted = t.completed;
+        const taskCopy = { ...t };
+
         t.completed = !t.completed;
         save();
+
+        hapticImpact('light');
+
+        // Show undo toast
+        if (t.completed) {
+            showUndoToast('Задача выполнена', () => {
+                // Undo: revert completion
+                const taskToUndo = tasks.find(x => x.id === id);
+                if (taskToUndo) {
+                    taskToUndo.completed = wasCompleted;
+                    save();
+                    renderStack();
+                }
+            });
+        }
     }
 }
 
@@ -1301,3 +1700,205 @@ window.deleteCat = deleteCat;
 window.toggleTask = toggleTask;
 window.toggleCard = toggleCard;
 window.openTaskDetails = openTaskDetails;
+
+// ===== STATISTICS =====
+function showStatistics() {
+    const today = getTodayStr();
+
+    const total = tasks.length;
+    const completed = tasks.filter(t => t.completed).length;
+    const todayTasks = tasks.filter(t => !t.completed && t.date === today).length;
+    const overdue = tasks.filter(t => !t.completed && t.date && t.date < today).length;
+    const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+    // Update modal
+    document.getElementById('stat-total').textContent = total;
+    document.getElementById('stat-completed').textContent = completed;
+    document.getElementById('stat-today').textContent = todayTasks;
+    document.getElementById('stat-overdue').textContent = overdue;
+    document.getElementById('stat-progress').style.width = percent + '%';
+    document.getElementById('stat-percent').textContent = percent + '%';
+
+    // Show modal
+    document.getElementById('modal-statistics').classList.remove('hidden');
+}
+
+// Export statistics function
+window.showStatistics = showStatistics;
+
+// ===== TEMPLATES =====
+function applyTemplate(templateText) {
+    const titleInput = document.getElementById('input-title');
+    if (titleInput) {
+        titleInput.value = templateText;
+        hapticImpact('light');
+    }
+}
+
+window.applyTemplate = applyTemplate;
+
+// ===== EMOJI PICKER =====
+function addEmoji(emoji) {
+    const input = document.getElementById('input-new-cat');
+    if (input) {
+        input.value += emoji;
+        input.focus();
+        hapticImpact('light');
+    }
+}
+
+window.addEmoji = addEmoji;
+
+// ===== ONBOARDING =====
+function showOnboarding() {
+    const hasSeenOnboarding = localStorage.getItem('onboarding_seen');
+    if (!hasSeenOnboarding) {
+        setTimeout(() => {
+            document.getElementById('modal-onboarding').classList.remove('hidden');
+        }, 500);
+    }
+}
+
+function closeOnboarding() {
+    document.getElementById('modal-onboarding').classList.add('hidden');
+    localStorage.setItem('onboarding_seen', 'true');
+}
+
+window.closeOnboarding = closeOnboarding;
+
+// ===== DRAFT AUTOSAVE =====
+const DRAFT_KEY = 'task_draft';
+
+function saveDraft() {
+    const title = document.getElementById('input-title')?.value || '';
+    const desc = document.getElementById('input-desc')?.value || '';
+    const date = selectedDate;
+    const time = document.getElementById('input-time')?.value || '';
+    const category = selectedCategory;
+
+    if (title || desc) {
+        const draft = { title, desc, date, time, category, photos: currentPhotos };
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    }
+}
+
+function loadDraft() {
+    const draftStr = localStorage.getItem(DRAFT_KEY);
+    if (draftStr) {
+        try {
+            const draft = JSON.parse(draftStr);
+            if (draft.title) document.getElementById('input-title').value = draft.title;
+            if (draft.desc) document.getElementById('input-desc').value = draft.desc;
+            if (draft.date) {
+                selectedDate = draft.date;
+                updateDateLabel();
+            }
+            if (draft.time) document.getElementById('input-time').value = draft.time;
+            if (draft.category) {
+                selectedCategory = draft.category;
+                document.getElementById('label-cat').innerText = draft.category;
+            }
+            if (draft.photos && draft.photos.length > 0) {
+                currentPhotos = draft.photos;
+                renderPhotoPreviews();
+            }
+            return true;
+        } catch (e) {
+            console.error('Draft load error:', e);
+        }
+    }
+    return false;
+}
+
+function clearDraft() {
+    localStorage.removeItem(DRAFT_KEY);
+}
+
+window.clearDraft = clearDraft;
+
+// ===== VOICE INPUT =====
+let isListening = false;
+
+function startVoiceInput() {
+    // Check if speech recognition is supported
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+        alert('Голосовой ввод не поддерживается в вашем браузере. Попробуйте открыть в Telegram.');
+        return;
+    }
+
+    if (isListening) {
+        // Stop listening
+        isListening = false;
+        const btn = document.getElementById('btn-voice-input');
+        if (btn) btn.classList.remove('listening');
+        return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'ru-RU';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => {
+        isListening = true;
+        const btn = document.getElementById('btn-voice-input');
+        if (btn) btn.classList.add('listening');
+        hapticImpact('light');
+    };
+
+    recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        const titleInput = document.getElementById('input-title');
+        if (titleInput) {
+            titleInput.value = transcript.charAt(0).toUpperCase() + transcript.slice(1);
+            hapticImpact('medium');
+        }
+    };
+
+    recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        isListening = false;
+        const btn = document.getElementById('btn-voice-input');
+        if (btn) btn.classList.remove('listening');
+
+        if (event.error === 'not-allowed') {
+            alert('Доступ к микрофону запрещен. Разрешите доступ в настройках браузера.');
+        }
+    };
+
+    recognition.onend = () => {
+        isListening = false;
+        const btn = document.getElementById('btn-voice-input');
+        if (btn) btn.classList.remove('listening');
+    };
+
+    recognition.start();
+}
+
+window.startVoiceInput = startVoiceInput;
+
+// Add voice button handler in setupEventListeners
+// (Will be added there)
+// Modify openAddTaskModal to load draft
+const originalOpenAddTaskModal = window.openAddTaskModal;
+window.openAddTaskModal = () => {
+    // Call original
+    if (originalOpenAddTaskModal) {
+        originalOpenAddTaskModal();
+    }
+
+    // Load draft if exists
+    const hasDraft = loadDraft();
+    if (hasDraft) {
+        // Show indicator that draft was loaded
+        const hint = document.createElement('div');
+        hint.style.cssText = 'color: var(--accent-red); font-size: 12px; margin: 8px 0;';
+        hint.textContent = '💾 Восстановлен черновик';
+        document.getElementById('input-title').parentNode.appendChild(hint);
+    }
+};
+
+// Add autosave listeners in setupEventListeners
+// (Will be added there)
