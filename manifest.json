@@ -1,0 +1,17 @@
+{
+    "name": "Planner",
+    "short_name": "Planner",
+    "description": "High-end compact task manager",
+    "start_url": "index.html",
+    "display": "standalone",
+    "background_color": "#F5F5F7",
+    "theme_color": "#F5F5F7",
+    "icons": [
+        {
+            "src": "icon.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}

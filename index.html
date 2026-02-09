@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Planner</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#F5F5F7">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="icon" type="image/png" href="icon.png">
+    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="stylesheet" href="style.css?v=49.4">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+
+<body class="light-theme">
+
+    <!-- Error Handler for Debugging -->
+    <script>
+        window.onerror = function (msg, url, line, col, error) {
+            alert("Global Error:\n" + msg + "\nLine: " + line + "\nURL: " + url);
+            return false;
+        };
+
+        // Force Version Check
+        const CURRENT_VERSION = '49.4';
+        if (localStorage.getItem('app_version') !== CURRENT_VERSION) {
+            localStorage.setItem('app_version', CURRENT_VERSION);
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(function (registrations) {
+                    for (let registration of registrations) {
+                        registration.unregister();
+                    }
+                    window.location.reload(true);
+                });
+            }
+        }
+    </script>
+    <!-- Main Screen -->
+    <div id="app" class="app-container">
+
+        <!-- Header -->
+        <header class="main-header">
+            <div class="header-row">
+                <div class="date-container-center">
+                    <h1 id="header-date">Сегодня</h1>
+                </div>
+                <!-- Search Removed -->
+            </div>
+            <!-- Collapsible Search Removed from view -->
+            <div class="search-bar hidden" id="search-bar-container">
+                <i class="fas fa-search"></i>
+                <input type="text" id="global-search" placeholder="Поиск задач...">
+            </div>
+        </header>
+
+        <!-- Category Stack -->
+        <div class="category-stack" id="category-stack">
+            <!-- Categories will be injected here -->
+        </div>
+
+        <!-- Categories View (Tab) -->
+        <div class="view-container hidden" id="view-cats">
+            <div class="view-header">
+                <div class="subtitle">ПАПКИ</div>
+                <h2>Управление<br>категориями</h2>
+            </div>
+            <div class="hint-text">Удерживайте и тяните для сортировки</div>
+            <div id="cats-list-container"></div>
+            <button class="btn-primary" onclick="addNewCatPrompt()">+ НОВАЯ ПАПКА</button>
+        </div>
+
+        <!-- Spacer for Dock -->
+        <div class="dock-spacer"></div>
+
+        <!-- Bottom Dock -->
+        <div class="bottom-dock">
+            <button class="dock-btn active" id="nav-home" onclick="switchTab('home')">
+                <i class="fas fa-home"></i>
+            </button>
+
+            <button class="dock-fab" onclick="openAddTaskModal()">
+                <i class="fas fa-plus"></i>
+            </button>
+
+            <button class="dock-btn" id="nav-cats" onclick="switchTab('cats')">
+                <i class="fas fa-folder"></i>
+            </button>
+        </div>
+
+    </div>
+
+    <!-- View Task Modal (New Design) -->
+    <div id="modal-view-task" class="modal overlay hidden">
+        <div class="modal-card">
+            <!-- Header Actions -->
+            <div class="modal-view-header">
+                <div class="badge-category" id="view-category-badge">ОБЩИЕ</div>
+                <div class="header-right-actions">
+                    <button id="btn-view-edit-top" class="btn-text-accent">ИЗМЕНИТЬ</button>
+                    <button id="btn-close-view" class="btn-icon circle-btn"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
+
+            <div class="view-scroll-content">
+                <!-- Title -->
+                <h1 id="view-title" class="view-task-title">Название задачи</h1>
+
+                <!-- Time & Date -->
+                <div class="view-meta-row">
+                    <div id="view-time-container" class="meta-pill hidden">
+                        <i class="far fa-clock"></i> <span id="view-time-val"></span>
+                    </div>
+                    <div id="view-date-container" class="meta-pill hidden">
+                        <i class="far fa-calendar"></i> <span id="view-date-val"></span>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div id="view-desc-block" class="view-block hidden">
+                    <label>Описание</label>
+                    <div id="view-desc-text" class="view-text-content"></div>
+                </div>
+
+                <!-- Tags -->
+                <div id="view-tags-block" class="view-block hidden">
+                    <label>Теги</label>
+                    <div id="view-tags-text" class="view-tags-content"></div>
+                </div>
+
+                <!-- Gallery -->
+                <div id="view-gallery-block" class="view-block hidden">
+                    <label>Вложения</label>
+                    <div class="gallery-container">
+                        <div class="gallery-track" id="view-gallery-track">
+                            <!-- Photos injected via JS -->
+                        </div>
+                        <div class="gallery-indicators" id="view-gallery-dots"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Actions -->
+            <div class="view-footer">
+                <button id="btn-view-delete" class="btn-text-danger">Удалить</button>
+                <div class="spacer"></div>
+                <button id="btn-view-complete" class="btn-primary-red">ВЫПОЛНИТЬ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Task Modal -->
+    <div class="modal overlay hidden" id="modal-add-task">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2 id="modal-title">НОВАЯ ЗАДАЧА</h2>
+                <button class="close-btn" id="close-add-task"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body wizard-container">
+
+                <!-- STEP 1: TITLE & DESCRIPTION -->
+                <div class="wizard-step" id="wizard-step-1">
+                    <div class="step-header">Что нужно сделать?</div>
+                    <input type="text" id="input-title" class="input-large" placeholder="Название задачи"
+                        autocomplete="off">
+
+                    <div class="desc-box">
+                        <textarea id="input-desc" class="input-area" placeholder="Описание / Комментарий"></textarea>
+                    </div>
+                </div>
+
+                <!-- STEP 2: PHOTOS -->
+                <div class="wizard-step hidden" id="wizard-step-2">
+                    <div class="step-header">Фотографии</div>
+                    <div class="photo-upload-container">
+                        <button class="btn-add-photo-large" id="btn-add-photo-wizard">
+                            <i class="fas fa-plus"></i>
+                            <span>Добавить</span>
+                        </button>
+                        <input type="file" id="input-photo-native" multiple accept="image/*" class="hidden">
+                    </div>
+                    <div id="photos-preview-container" class="photos-grid"></div>
+                    <div class="step-hint">Можно добавить до 5 фото</div>
+                </div>
+
+                <!-- STEP 3: DATE & TIME -->
+                <div class="wizard-step hidden" id="wizard-step-3">
+                    <div class="step-header">Дата и Время</div>
+
+                    <div class="input-row clickable" id="btn-pick-date">
+                        <div class="row-left">
+                            <i class="fas fa-calendar-alt accent-icon"></i>
+                            <span id="label-date">Выбрать дату</span>
+                        </div>
+                        <button class="clear-date hidden" id="btn-clear-date"><i class="fas fa-times"></i></button>
+                    </div>
+
+                    <div class="input-row">
+                        <i class="far fa-clock text-gray"></i>
+                        <input type="time" id="input-time" class="input-transparent">
+                    </div>
+                </div>
+
+                <!-- STEP 4: SETTINGS -->
+                <div class="wizard-step hidden" id="wizard-step-4">
+                    <div class="step-header">Настройки</div>
+
+                    <div class="input-row clickable relative" id="btn-pick-cat">
+                        <div class="row-left">
+                            <span class="text-gray">Папка:</span>
+                            <span id="label-cat" class="text-dark bold">ОБЩИЕ</span>
+                        </div>
+                        <i class="fas fa-chevron-down text-gray small"></i>
+                    </div>
+                    <!-- Mini Dropdown for Categories -->
+                    <div class="dropdown hidden" id="dropdown-cat"></div>
+
+                    <div class="section-label" style="margin-top:24px;">Уведомления</div>
+                    <div class="chips-row">
+                        <div class="chip selected" onclick="selectNotify(0, this)">Нет</div>
+                        <div class="chip" onclick="selectNotify(5, this)">5 мин</div>
+                        <div class="chip" onclick="selectNotify(15, this)">15 мин</div>
+                        <div class="chip" onclick="selectNotify(60, this)">1 час</div>
+                    </div>
+
+                    <!-- Advanced Toggle -->
+                    <div class="advanced-toggle" onclick="toggleAdvanced()"
+                        style="margin-top:24px; display:flex; align-items:center; gap:8px; cursor:pointer;">
+                        <span class="text-accent bold"
+                            style="font-size:15px; color:var(--text-dark);">Дополнительно</span>
+                        <i class="fas fa-chevron-down text-gray small transition-icon" id="adv-chevron"
+                            style="transition: transform 0.2s;"></i>
+                    </div>
+
+                    <!-- Advanced Content -->
+                    <div id="advanced-settings" class="hidden"
+                        style="margin-top:16px; padding-left:4px; border-left: 2px solid #F2F2F7; margin-left:8px;">
+
+                        <div class="section-label" style="font-size:14px; margin-bottom:12px;">Повтор</div>
+                        <div class="chips-row scroll-x" style="padding-bottom:10px;">
+                            <div class="chip selected" onclick="selectRepeat('none', this)">Нет</div>
+                            <div class="chip" onclick="selectRepeat('daily', this)">Каждый день</div>
+                            <div class="chip" onclick="selectRepeat('weekly', this)">Раз в неделю</div>
+                            <div class="chip" onclick="selectRepeat('monthly', this)">Раз в месяц</div>
+                        </div>
+
+                        <div class="input-row" style="margin-top:8px;">
+                            <i class="fas fa-user-plus text-gray"></i>
+                            <input type="text" placeholder="Участник (имя)" class="input-transparent">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NAVIGATION FOOTER -->
+                <div class="wizard-footer">
+                    <button class="btn-nav secondary" id="btn-wizard-back">Отмена</button>
+                    <button class="btn-nav primary" id="btn-wizard-next">Далее</button>
+                </div>
+
+                <button class="hidden" id="btn-add-photo"></button> <!-- Legacy Hook Ref -->
+                <button class="hidden" id="btn-save-task"></button> <!-- Legacy Hook Ref -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Manager Modal -->
+    <div class="modal overlay hidden" id="modal-manage-cats">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div style="display:flex; flex-direction:column;">
+                    <span
+                        style="font-size:12px; font-weight:600; color:#8E8E93; letter-spacing:1px; text-transform:uppercase;">ПАПКИ</span>
+                    <h2 style="font-size:28px; line-height:1.1; margin:0; color:#000;">Управление<br>категориями</h2>
+                </div>
+                <button class="close-btn" id="close-manage-cats"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div id="cats-list-container" style="max-height: 300px; overflow-y: auto; margin-bottom: 20px;"></div>
+                <div class="input-row" style="border:none; padding:0;">
+                    <input type="text" id="input-new-cat" class="input-std" placeholder="Название..."
+                        style="margin-bottom:0; flex:1;">
+                    <button class="dock-fab" id="btn-add-cat"
+                        style="width:40px; height:40px; font-size:16px; margin-left:10px; box-shadow:none;"><i
+                            class="fas fa-plus"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal overlay hidden" id="modal-datepicker">
+        <div class="modal-card compact">
+            <input type="date" id="input-date-native">
+            <div class="modal-actions">
+                <button class="btn-text" id="btn-cancel-date">Отмена</button>
+                <button class="btn-text accent" id="btn-confirm-date">ВЫБРАТЬ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+    <!-- Config -->
+    <script src="firebase-config.js?v=52.5"></script>
+
+    <!-- Scripts -->
+    <script src="app.js?v=52.5"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js?v=52.5').then(reg => {
+                reg.update();
+            });
+        }
+    </script>
+</body>
+
+</html>
