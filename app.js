@@ -186,7 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Show onboarding for first-time users
     showOnboarding();
 
-    console.log("App v49.5 loaded successfully");
+    console.log("App v49.6 loaded successfully");
 });
 
 // Firebase Config (loaded from separate file)
@@ -1752,19 +1752,36 @@ window.addEmoji = addEmoji;
 // ===== ONBOARDING =====
 function showOnboarding() {
     const hasSeenOnboarding = localStorage.getItem('onboarding_seen');
+    console.log('[Onboarding] hasSeenOnboarding:', hasSeenOnboarding);
     if (!hasSeenOnboarding) {
         setTimeout(() => {
             document.getElementById('modal-onboarding').classList.remove('hidden');
+            console.log('[Onboarding] Modal shown');
         }, 500);
     }
 }
 
 function closeOnboarding() {
-    document.getElementById('modal-onboarding').classList.add('hidden');
-    localStorage.setItem('onboarding_seen', 'true');
+    console.log('[Onboarding] closeOnboarding called');
+    const modal = document.getElementById('modal-onboarding');
+    if (modal) {
+        modal.classList.add('hidden');
+        localStorage.setItem('onboarding_seen', 'true');
+        console.log('[Onboarding] Modal hidden, flag set');
+    } else {
+        console.error('[Onboarding] Modal element not found!');
+    }
+}
+
+// Debug function to reset onboarding
+function resetOnboarding() {
+    localStorage.removeItem('onboarding_seen');
+    console.log('[Onboarding] Reset! Reload page to see onboarding.');
+    showOnboarding();
 }
 
 window.closeOnboarding = closeOnboarding;
+window.resetOnboarding = resetOnboarding;
 
 // ===== DRAFT AUTOSAVE =====
 const DRAFT_KEY = 'task_draft';
