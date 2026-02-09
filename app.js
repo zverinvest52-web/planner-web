@@ -186,7 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Show onboarding for first-time users
     showOnboarding();
 
-    console.log("App v48.0 loaded successfully");
+    console.log("App v49.5 loaded successfully");
 });
 
 // Firebase Config (loaded from separate file)
@@ -578,9 +578,9 @@ function setupEventListeners() {
         }
 
         // Close onboarding modal
-        const closeOnboarding = document.getElementById('btn-close-onboarding');
-        if (closeOnboarding) {
-            closeOnboarding.onclick = closeOnboarding;
+        const closeOnboardingBtn = document.getElementById('btn-close-onboarding');
+        if (closeOnboardingBtn) {
+            closeOnboardingBtn.onclick = window.closeOnboarding;
         }
 
         // Draft autosave listeners
