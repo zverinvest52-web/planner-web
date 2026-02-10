@@ -1873,16 +1873,6 @@ function startVoiceInput() {
         isListening = false;
     }
 }
-    };
-
-    recognition.onend = () => {
-        isListening = false;
-        const btn = document.getElementById('btn-voice-input');
-        if (btn) btn.classList.remove('listening');
-    };
-
-    recognition.start();
-}
 
 window.startVoiceInput = startVoiceInput;
 

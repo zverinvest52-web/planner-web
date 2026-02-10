@@ -34,7 +34,7 @@
         };
 
         // Force Version Check
-        const CURRENT_VERSION = '50.2';
+        const CURRENT_VERSION = '53.2';
         if (localStorage.getItem('app_version') !== CURRENT_VERSION) {
             localStorage.setItem('app_version', CURRENT_VERSION);
             if ('serviceWorker' in navigator) {
@@ -417,7 +417,7 @@
     <script src="firebase-config.js?v=53.1"></script>
 
     <!-- Scripts -->
-    <script src="app.js?v=53.1"></script>
+    <script src="app.js?v=53.2"></script>
     <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js?v=53.1').then(reg => {
