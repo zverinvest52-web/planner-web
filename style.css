@@ -45,10 +45,30 @@
 body {
     background-color: var(--bg-light);
     color: var(--text-dark);
-    height: 100dvh;
+    min-height: 100dvh;
     width: 100vw;
-    overflow: hidden;
+    overflow-x: hidden;
     transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Desktop background */
+@media (min-width: 768px) {
+    body {
+        background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+    }
+
+    .dark-theme body {
+        background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    }
+
+    .app-container {
+        height: 100vh;
+        max-height: 100vh;
+        overflow: hidden;
+    }
 }
 
 /* App Container */
@@ -353,62 +373,6 @@ body {
     color: var(--accent-red);
 }
 
-
-/* Bottom Dock */
-.bottom-dock {
-    position: fixed;
-    left: 16px;
-    width: calc(100% - 32px);
-    height: 70px;
-    bottom: 20px;
-    border-radius: 24px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-    background: var(--dock-bg);
-    backdrop-filter: blur(20px);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 100;
-    border-top: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-.dock-content {
-    display: flex;
-    align-items: center;
-    gap: 40px;
-}
-
-.dock-btn {
-    background: none;
-    border: none;
-    font-size: 24px;
-    color: #C7C7CC;
-    cursor: pointer;
-}
-
-.dock-btn.active {
-    color: var(--text-dark);
-}
-
-.dock-fab {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    background: var(--accent-red);
-    color: white;
-    font-size: 24px;
-    border: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 16px rgba(255, 59, 48, 0.4);
-    cursor: pointer;
-    transition: transform 0.1s;
-}
-
-.dock-fab:active {
-    transform: scale(0.95);
-}
 
 /* Modals */
 .modal.overlay {
@@ -723,7 +687,7 @@ body {
     /* Reset margins */
 }
 
-/* ===== BOTTOM DOCK - NARROWER ===== */
+/* ===== BOTTOM DOCK ===== */
 .bottom-dock {
     position: fixed;
     bottom: 24px;
@@ -732,7 +696,6 @@ body {
     background: rgba(255, 255, 255, 0.98);
     backdrop-filter: blur(10px);
     padding: 8px 16px;
-    /* Narrower padding */
     border-radius: 32px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
     display: flex;
@@ -741,7 +704,7 @@ body {
     gap: 32px;
     z-index: 9999;
     min-width: fit-content;
-    /* Ensure it wraps tight */
+    transition: all 0.3s ease;
 }
 
 .dock-btn {
@@ -755,6 +718,13 @@ body {
     align-items: center;
     justify-content: center;
     cursor: pointer;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+}
+
+.dock-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: #1C1C1E;
 }
 
 .dock-btn.active {
@@ -774,6 +744,16 @@ body {
     justify-content: center;
     box-shadow: 0 4px 12px rgba(255, 59, 48, 0.35);
     cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.dock-fab:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 16px rgba(255, 59, 48, 0.45);
+}
+
+.dock-fab:active {
+    transform: scale(0.95);
 }
 
 
@@ -1794,4 +1774,140 @@ body,
     display: block;
     margin-bottom: 4px;
     font-size: 15px;
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+
+/* Tablet (768px+) */
+@media (min-width: 768px) {
+    body {
+        font-size: 16px;
+    }
+
+    /* Center content on larger screens */
+    .app-container {
+        max-width: 768px;
+        margin: 0 auto;
+        box-shadow: 0 0 100px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Increase modal size */
+    .modal-card {
+        max-width: 600px;
+        margin: 0 auto;
+        border-radius: 24px;
+    }
+
+    /* Task items bigger */
+    .task-item {
+        padding: 18px 24px;
+    }
+}
+
+/* Desktop (1024px+) */
+@media (min-width: 1024px) {
+    .app-container {
+        max-width: 900px;
+        border-left: 1px solid rgba(0, 0, 0, 0.05);
+        border-right: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .dark-theme .app-container {
+        border-left: 1px solid rgba(255, 255, 255, 0.05);
+        border-right: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    /* Larger modal windows */
+    .modal-card {
+        max-width: 700px;
+        padding: 32px;
+    }
+
+    /* Bigger header */
+    .main-header {
+        height: 120px;
+        padding-top: 40px;
+    }
+
+    #header-date {
+        font-size: 24px;
+    }
+
+    /* Category cards larger */
+    .category-card {
+        max-width: 100%;
+        margin: 0 auto;
+    }
+
+    .card-header h2 {
+        font-size: 28px;
+    }
+
+    /* Dock stays at bottom but with better spacing */
+    .bottom-dock {
+        max-width: 900px;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
+    /* Better hover states for desktop */
+    .dock-btn:hover {
+        background: rgba(0, 0, 0, 0.05);
+        border-radius: 12px;
+    }
+
+    .dark-theme .dock-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .dock-fab:hover {
+        transform: scale(1.05);
+        box-shadow: 0 6px 20px rgba(255, 59, 48, 0.4);
+    }
+
+    /* Chip hover effects */
+    .chip:hover {
+        transform: translateY(-1px);
+    }
+
+    /* Button hover states */
+    button:hover {
+        cursor: pointer;
+    }
+
+    /* Task checkbox better on desktop */
+    .task-checkbox-area {
+        min-width: 50px;
+        min-height: 50px;
+    }
+
+    .checkbox-circle {
+        width: 24px;
+        height: 24px;
+    }
+}
+
+/* Large Desktop (1440px+) */
+@media (min-width: 1440px) {
+    .app-container {
+        max-width: 1000px;
+    }
+
+    .modal-card {
+        max-width: 800px;
+    }
+
+    .bottom-dock {
+        max-width: 1000px;
+    }
+
+    /* More spacious layout */
+    .category-stack {
+        padding: 0 40px;
+    }
+
+    .task-item {
+        padding: 20px 28px;
+        margin-bottom: 16px;
+    }
 }
