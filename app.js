@@ -186,7 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Show onboarding for first-time users - DISABLED per user request
     // showOnboarding();
 
-    console.log("App v55.0 loaded successfully");
+    console.log("App v56.0 loaded successfully");
 });
 
 // Firebase Config (loaded from separate file)
@@ -346,15 +346,6 @@ window.openAddTaskModal = () => {
 
     // Reset Chips
     document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
-
-    // Load draft if exists
-    const hasDraft = loadDraft();
-    if (hasDraft) {
-        const hint = document.createElement('div');
-        hint.style.cssText = 'color: var(--accent-red); font-size: 12px; margin: 8px 0;';
-        hint.textContent = '💾 Восстановлен черновик';
-        document.getElementById('input-title').parentNode.appendChild(hint);
-    }
 
     updateWizardUI();
     const m = document.getElementById('modal-add-task');
@@ -537,7 +528,6 @@ function setupEventListeners() {
                 }
 
                 save();
-                clearDraft(); // Clear draft after successful save
                 renderStack();
                 const mAdd = document.getElementById('modal-add-task');
                 if (mAdd) mAdd.classList.add('hidden');
@@ -596,16 +586,6 @@ function setupEventListeners() {
         const titleInput = document.getElementById('input-title');
         const descInput = document.getElementById('input-desc');
         const timeInput = document.getElementById('input-time');
-
-        if (titleInput) titleInput.addEventListener('input', saveDraft);
-        if (descInput) descInput.addEventListener('input', saveDraft);
-        if (timeInput) timeInput.addEventListener('input', saveDraft);
-
-        // Voice input button
-        const voiceBtn = document.getElementById('btn-voice-input');
-        if (voiceBtn) {
-            voiceBtn.onclick = startVoiceInput;
-        }
     } catch (e) {
         console.error("Setup Listeners Error:", e);
         alert("Setup Error: " + e.message);
@@ -1679,126 +1659,3 @@ function resetOnboarding() {
 
 window.closeOnboarding = closeOnboarding;
 window.resetOnboarding = resetOnboarding;
-
-// ===== DRAFT AUTOSAVE =====
-const DRAFT_KEY = 'task_draft';
-
-function saveDraft() {
-    const title = document.getElementById('input-title')?.value || '';
-    const desc = document.getElementById('input-desc')?.value || '';
-    const date = selectedDate;
-    const time = document.getElementById('input-time')?.value || '';
-    const category = selectedCategory;
-
-    if (title || desc) {
-        const draft = { title, desc, date, time, category, photos: currentPhotos };
-        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
-    }
-}
-
-function loadDraft() {
-    const draftStr = localStorage.getItem(DRAFT_KEY);
-    if (draftStr) {
-        try {
-            const draft = JSON.parse(draftStr);
-            if (draft.title) document.getElementById('input-title').value = draft.title;
-            if (draft.desc) document.getElementById('input-desc').value = draft.desc;
-            if (draft.date) {
-                selectedDate = draft.date;
-                updateDateLabel();
-            }
-            if (draft.time) document.getElementById('input-time').value = draft.time;
-            if (draft.category) {
-                selectedCategory = draft.category;
-                document.getElementById('label-cat').innerText = draft.category;
-            }
-            if (draft.photos && draft.photos.length > 0) {
-                currentPhotos = draft.photos;
-                renderPhotoPreviews();
-            }
-            return true;
-        } catch (e) {
-            console.error('Draft load error:', e);
-        }
-    }
-    return false;
-}
-
-function clearDraft() {
-    localStorage.removeItem(DRAFT_KEY);
-}
-
-window.clearDraft = clearDraft;
-
-// ===== VOICE INPUT =====
-let isListening = false;
-let recognitionInstance = null;
-
-function startVoiceInput() {
-    // Check if speech recognition is supported
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-    if (!SpeechRecognition) {
-        alert('Голосовой ввод не поддерживается в вашем браузере. Попробуйте открыть в Telegram.');
-        return;
-    }
-
-    if (isListening) {
-        // Stop listening
-        isListening = false;
-        const btn = document.getElementById('btn-voice-input');
-        if (btn) btn.classList.remove('listening');
-        if (recognitionInstance) {
-            recognitionInstance.stop();
-        }
-        return;
-    }
-
-    // Create recognition instance once and reuse it
-    if (!recognitionInstance) {
-        recognitionInstance = new SpeechRecognition();
-        recognitionInstance.lang = 'ru-RU';
-        recognitionInstance.continuous = false;
-        recognitionInstance.interimResults = false;
-
-        recognitionInstance.onresult = (event) => {
-            const transcript = event.results[0][0].transcript;
-            const titleInput = document.getElementById('input-title');
-            if (titleInput) {
-                titleInput.value = transcript.charAt(0).toUpperCase() + transcript.slice(1);
-                hapticImpact('medium');
-            }
-        };
-
-        recognitionInstance.onerror = (event) => {
-            console.error('Speech recognition error:', event.error);
-            isListening = false;
-            const btn = document.getElementById('btn-voice-input');
-            if (btn) btn.classList.remove('listening');
-
-            if (event.error === 'not-allowed') {
-                alert('Доступ к микрофону запрещен. Разрешите доступ в настройках браузера.');
-            }
-        };
-
-        recognitionInstance.onend = () => {
-            isListening = false;
-            const btn = document.getElementById('btn-voice-input');
-            if (btn) btn.classList.remove('listening');
-        };
-    }
-
-    // Start listening
-    try {
-        recognitionInstance.start();
-        isListening = true;
-        const btn = document.getElementById('btn-voice-input');
-        if (btn) btn.classList.add('listening');
-        hapticImpact('light');
-    } catch (e) {
-        console.error('Speech start error:', e);
-        isListening = false;
-    }
-}
-
-window.startVoiceInput = startVoiceInput;
