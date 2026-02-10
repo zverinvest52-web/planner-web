@@ -399,15 +399,32 @@ body {
     background: var(--card-white);
     width: 90%;
     max-width: 400px;
+    max-height: 85vh;
     border-radius: 32px;
     padding: 24px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
     transform: translateY(20px);
     transition: transform 0.2s;
+    animation: modalSlideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes modalSlideUp {
+    from {
+        transform: translateY(100px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(20px);
+        opacity: 1;
+    }
 }
 
 .modal.overlay:not(.hidden) .modal-card {
     transform: translateY(0);
+    opacity: 1;
 }
 
 .modal-header {
@@ -421,6 +438,12 @@ body {
     font-size: 14px;
     color: var(--text-gray);
     letter-spacing: 2px;
+}
+
+.modal-body {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
 }
 
 .close-btn {
@@ -755,32 +778,6 @@ body {
 
 
 /* --- VIEW TASK MODAL STYLES --- */
-.modal-card {
-    background: #FFFFFF;
-    width: 90%;
-    max-width: 400px;
-    max-height: 85vh;
-    border-radius: 32px;
-    padding: 24px;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-    animation: modalSlideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-@keyframes modalSlideUp {
-    from {
-        transform: translateY(100px);
-        opacity: 0;
-    }
-
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
-
 .modal-view-header {
     display: flex;
     justify-content: space-between;
