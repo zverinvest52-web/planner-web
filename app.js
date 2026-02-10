@@ -186,7 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Show onboarding for first-time users - DISABLED per user request
     // showOnboarding();
 
-    console.log("App v66.0 loaded successfully");
+    console.log("App v67.0 loaded successfully");
 });
 
 // Firebase Config (loaded from separate file)
@@ -1113,11 +1113,36 @@ function getTodayStr() {
 }
 
 function save() {
-    // Local Save (Always backup)
-    localStorage.setItem('planner_tasks', JSON.stringify(tasks));
-    localStorage.setItem('planner_categories', JSON.stringify(categories));
+    // Local Save (Always backup) - БЕЗ фото чтобы не переполнить LocalStorage
+    try {
+        // Создаем копию задач без фото для LocalStorage
+        const tasksForLocal = tasks.map(task => {
+            const { photos, ...taskWithoutPhotos } = task;
+            return taskWithoutPhotos;
+        });
 
-    // Cloud Save
+        localStorage.setItem('planner_tasks', JSON.stringify(tasksForLocal));
+        localStorage.setItem('planner_categories', JSON.stringify(categories));
+    } catch (e) {
+        if (e.name === 'QuotaExceededError') {
+            console.error('LocalStorage переполнен! Очищаем старые данные...');
+            // Пытаемся очистить и сохранить снова
+            localStorage.removeItem('planner_tasks');
+            try {
+                const tasksForLocal = tasks.map(task => {
+                    const { photos, ...taskWithoutPhotos } = task;
+                    return taskWithoutPhotos;
+                });
+                localStorage.setItem('planner_tasks', JSON.stringify(tasksForLocal));
+            } catch (e2) {
+                console.error('Не удалось сохранить даже без фото:', e2);
+            }
+        } else {
+            console.error('LocalStorage save error:', e);
+        }
+    }
+
+    // Cloud Save - С фото
     if (tgUserId && db) {
         db.ref('users/' + tgUserId + '/monitor').set({
             tasks: tasks,
