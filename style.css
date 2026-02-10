@@ -1728,8 +1728,15 @@ body,
     /* Center content on larger screens */
     .app-container {
         max-width: 768px;
+        min-height: 100vh;
         margin: 0 auto;
         box-shadow: 0 0 100px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Category stack needs explicit height for flex:1 to work */
+    .category-stack {
+        overflow-y: auto;
+        min-height: calc(100vh - 180px); /* header + dock space */
     }
 
     /* Increase modal size */
@@ -1749,8 +1756,15 @@ body,
 @media (min-width: 1024px) {
     .app-container {
         max-width: 900px;
+        min-height: 100vh;
         border-left: 1px solid rgba(0, 0, 0, 0.05);
         border-right: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    /* Category stack needs explicit height for flex:1 to work */
+    .category-stack {
+        overflow-y: auto;
+        min-height: calc(100vh - 200px); /* header + dock space for desktop */
     }
 
     .dark-theme .app-container {
