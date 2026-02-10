@@ -1386,10 +1386,10 @@ body {
     box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
-.dark-theme #bottom-dock {
-    background: rgba(28, 28, 30, 0.98);
-    border-top: 1px solid var(--border-color);
-    box-shadow: 0 -1px 0 rgba(255, 255, 255, 0.05);
+.dark-theme .bottom-dock {
+    background: rgba(28, 28, 30, 0.98) !important;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 
 .dark-theme #header-date {
@@ -1570,6 +1570,20 @@ body {
 
 .dark-theme .btn-nav.secondary {
     background: #2C2C2E;
+}
+
+/* Dock buttons in dark theme */
+.dark-theme .dock-btn {
+    color: #8E8E93;
+}
+
+.dark-theme .dock-btn.active {
+    color: var(--accent-red);
+}
+
+.dark-theme .dock-fab {
+    background: var(--accent-red);
+    box-shadow: 0 4px 12px rgba(255, 59, 48, 0.4);
 }
 
 /* ===== ANIMATIONS ===== */
