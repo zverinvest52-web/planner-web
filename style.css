@@ -48,6 +48,7 @@ body {
     height: 100dvh;
     width: 100vw;
     overflow: hidden;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* App Container */
@@ -259,8 +260,18 @@ body {
     align-items: center;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
     min-height: 80px;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
     border: 1px solid transparent;
+    cursor: pointer;
+}
+
+.task-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.task-item:active {
+    transform: scale(0.98);
 }
 
 /* Critical Task (Today/Overdue) */
@@ -1226,58 +1237,6 @@ body {
     overflow: visible;
 }
 
-.swipe-actions {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    display: flex;
-    z-index: 1;
-}
-
-.swipe-action-left {
-    background: #34C759;
-    /* Green for complete */
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    padding-right: 20px;
-    flex: 0 0 80px;
-    transition: flex 0.2s ease;
-}
-
-.swipe-action-left i {
-    font-size: 24px;
-}
-
-.swipe-action-right {
-    background: #FF3B30;
-    /* Red for delete */
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    padding-left: 20px;
-    flex: 0 0 80px;
-    transition: flex 0.2s ease;
-}
-
-.swipe-action-right i {
-    font-size: 24px;
-}
-
-.task-item {
-    position: relative;
-    z-index: 2;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.task-item.swiping {
-    transition: none;
-}
-
 /* ===== STATISTICS MODAL ===== */
 .stats-container {
     display: grid;
@@ -1496,43 +1455,6 @@ body {
 .dark-theme .cat-item-row {
     background: var(--card-white);
     border-bottom: 1px solid var(--border-color);
-}
-
-.dark-theme .cat-item-row {
-    background: var(--card-white);
-}
-
-.dark-theme .input-std {
-    background: #2C2C2E;
-    color: var(--text-dark);
-}
-
-.dark-theme .category-card {
-    background: var(--card-white);
-}
-
-.dark-theme .task-item {
-    background: var(--card-white);
-}
-
-.dark-theme .modal-card {
-    background: var(--card-white);
-}
-
-.dark-theme .undo-toast {
-    background: rgba(44, 44, 46, 0.95);
-}
-
-.dark-theme .stat-card {
-    background: #3A3A3C;
-}
-
-.dark-theme .progress-bar {
-    background: #3A3A3C;
-}
-
-.dark-theme .cat-item-row {
-    background: var(--card-white);
 }
 
 .dark-theme .chips-row .chip {

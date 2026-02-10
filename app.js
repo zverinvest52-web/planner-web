@@ -186,7 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Show onboarding for first-time users - DISABLED per user request
     // showOnboarding();
 
-    console.log("App v50.1 loaded successfully");
+    console.log("App v53.2 loaded successfully");
 });
 
 // Firebase Config (loaded from separate file)
@@ -346,6 +346,15 @@ window.openAddTaskModal = () => {
 
     // Reset Chips
     document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+
+    // Load draft if exists
+    const hasDraft = loadDraft();
+    if (hasDraft) {
+        const hint = document.createElement('div');
+        hint.style.cssText = 'color: var(--accent-red); font-size: 12px; margin: 8px 0;';
+        hint.textContent = '💾 Восстановлен черновик';
+        document.getElementById('input-title').parentNode.appendChild(hint);
+    }
 
     updateWizardUI();
     const m = document.getElementById('modal-add-task');
@@ -1272,88 +1281,6 @@ function renderTasksForCategory(container, taskList) {
     });
 }
 
-// ===== SWIPE HANDLERS =====
-function setupSwipeHandlers(element, task) {
-    let startX = 0;
-    let currentX = 0;
-    let isDragging = false;
-    const threshold = 80; // px to trigger action
-
-    element.addEventListener('touchstart', (e) => {
-        startX = e.touches[0].clientX;
-        isDragging = true;
-        element.classList.add('swiping');
-    }, { passive: true });
-
-    element.addEventListener('touchmove', (e) => {
-        if (!isDragging) return;
-        currentX = e.touches[0].clientX;
-        const deltaX = currentX - startX;
-
-        // Limit swipe distance
-        if (deltaX > 0) {
-            // Swipe right - show complete
-            element.style.transform = `translateX(${Math.min(deltaX, threshold)}px)`;
-        } else {
-            // Swipe left - show delete
-            element.style.transform = `translateX(${Math.max(deltaX, -threshold)}px)`;
-        }
-    }, { passive: true });
-
-    element.addEventListener('touchend', () => {
-        if (!isDragging) return;
-        isDragging = false;
-        element.classList.remove('swiping');
-
-        const deltaX = currentX - startX;
-
-        if (deltaX > threshold / 2) {
-            // Swiped right - complete
-            if (!task.completed) {
-                toggleTask(task.id);
-            }
-            resetPosition();
-        } else if (deltaX < -threshold / 2) {
-            // Swiped left - delete
-            deleteTaskWithUndo(task.id);
-            resetPosition();
-        } else {
-            // Reset position
-            resetPosition();
-        }
-
-        function resetPosition() {
-            element.style.transition = 'transform 0.3s ease';
-            element.style.transform = 'translateX(0)';
-            setTimeout(() => {
-                element.style.transition = '';
-            }, 300);
-        }
-
-        startX = 0;
-        currentX = 0;
-    });
-}
-
-function deleteTaskWithUndo(taskId) {
-    const taskToDelete = tasks.find(t => t.id === taskId);
-    if (!taskToDelete) return;
-
-    const taskIndex = tasks.findIndex(t => t.id === taskId);
-
-    tasks = tasks.filter(t => t.id !== taskId);
-    save();
-    renderStack();
-
-    hapticImpact('heavy');
-
-    showUndoToast('Задача удалена', () => {
-        tasks.splice(taskIndex, 0, taskToDelete);
-        save();
-        renderStack();
-    });
-}
-
 // Logic Actions
 function toggleTask(id) {
     const t = tasks.find(x => x.id === id);
@@ -1875,27 +1802,3 @@ function startVoiceInput() {
 }
 
 window.startVoiceInput = startVoiceInput;
-
-// Add voice button handler in setupEventListeners
-// (Will be added there)
-// Modify openAddTaskModal to load draft
-const originalOpenAddTaskModal = window.openAddTaskModal;
-window.openAddTaskModal = () => {
-    // Call original
-    if (originalOpenAddTaskModal) {
-        originalOpenAddTaskModal();
-    }
-
-    // Load draft if exists
-    const hasDraft = loadDraft();
-    if (hasDraft) {
-        // Show indicator that draft was loaded
-        const hint = document.createElement('div');
-        hint.style.cssText = 'color: var(--accent-red); font-size: 12px; margin: 8px 0;';
-        hint.textContent = '💾 Восстановлен черновик';
-        document.getElementById('input-title').parentNode.appendChild(hint);
-    }
-};
-
-// Add autosave listeners in setupEventListeners
-// (Will be added there)
