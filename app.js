@@ -186,7 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Show onboarding for first-time users - DISABLED per user request
     // showOnboarding();
 
-    console.log("App v50.0 loaded successfully");
+    console.log("App v50.1 loaded successfully");
 });
 
 // Firebase Config (loaded from separate file)
@@ -1236,23 +1236,7 @@ function renderTasksForCategory(container, taskList) {
         }
         else if (task.time) infoText = task.time;
 
-        // Create wrapper for swipe actions
-        const wrapper = document.createElement('div');
-        wrapper.className = 'task-item-wrapper';
-
-        // Swipe actions background
-        const swipeActions = document.createElement('div');
-        swipeActions.className = 'swipe-actions';
-        swipeActions.innerHTML = `
-            <div class="swipe-action-left" data-action="complete" data-task-id="${task.id}">
-                <i class="fas fa-check"></i>
-            </div>
-            <div class="swipe-action-right" data-action="delete" data-task-id="${task.id}">
-                <i class="fas fa-trash"></i>
-            </div>
-        `;
-
-        // Task item
+        // Task item - no wrapper, no swipe actions
         const div = document.createElement('div');
         div.className = `task-item ${isCompleted ? 'completed' : ''} ${isCritical ? 'critical' : ''}`;
         div.dataset.taskId = task.id;
@@ -1272,9 +1256,6 @@ function renderTasksForCategory(container, taskList) {
             ${infoText ? `<div class="info-pill">${infoText}</div>` : ''}
         `;
 
-        // Setup swipe handlers - DISABLED per user request
-        // setupSwipeHandlers(div, task);
-
         const checkboxArea = div.querySelector('.task-checkbox-area');
         checkboxArea.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -1287,18 +1268,7 @@ function renderTasksForCategory(container, taskList) {
             openTaskDetails(task);
         });
 
-        // Swipe action handlers
-        swipeActions.querySelector('.swipe-action-left').addEventListener('click', () => {
-            if (!task.completed) toggleTask(task.id);
-        });
-
-        swipeActions.querySelector('.swipe-action-right').addEventListener('click', () => {
-            deleteTaskWithUndo(task.id);
-        });
-
-        wrapper.appendChild(swipeActions);
-        wrapper.appendChild(div);
-        container.appendChild(wrapper);
+        container.appendChild(div);
     });
 }
 
@@ -1835,6 +1805,7 @@ window.clearDraft = clearDraft;
 
 // ===== VOICE INPUT =====
 let isListening = false;
+let recognitionInstance = null;
 
 function startVoiceInput() {
     // Check if speech recognition is supported
@@ -1850,39 +1821,58 @@ function startVoiceInput() {
         isListening = false;
         const btn = document.getElementById('btn-voice-input');
         if (btn) btn.classList.remove('listening');
+        if (recognitionInstance) {
+            recognitionInstance.stop();
+        }
         return;
     }
 
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'ru-RU';
-    recognition.continuous = false;
-    recognition.interimResults = false;
+    // Create recognition instance once and reuse it
+    if (!recognitionInstance) {
+        recognitionInstance = new SpeechRecognition();
+        recognitionInstance.lang = 'ru-RU';
+        recognitionInstance.continuous = false;
+        recognitionInstance.interimResults = false;
 
-    recognition.onstart = () => {
+        recognitionInstance.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            const titleInput = document.getElementById('input-title');
+            if (titleInput) {
+                titleInput.value = transcript.charAt(0).toUpperCase() + transcript.slice(1);
+                hapticImpact('medium');
+            }
+        };
+
+        recognitionInstance.onerror = (event) => {
+            console.error('Speech recognition error:', event.error);
+            isListening = false;
+            const btn = document.getElementById('btn-voice-input');
+            if (btn) btn.classList.remove('listening');
+
+            if (event.error === 'not-allowed') {
+                alert('Доступ к микрофону запрещен. Разрешите доступ в настройках браузера.');
+            }
+        };
+
+        recognitionInstance.onend = () => {
+            isListening = false;
+            const btn = document.getElementById('btn-voice-input');
+            if (btn) btn.classList.remove('listening');
+        };
+    }
+
+    // Start listening
+    try {
+        recognitionInstance.start();
         isListening = true;
         const btn = document.getElementById('btn-voice-input');
         if (btn) btn.classList.add('listening');
         hapticImpact('light');
-    };
-
-    recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        const titleInput = document.getElementById('input-title');
-        if (titleInput) {
-            titleInput.value = transcript.charAt(0).toUpperCase() + transcript.slice(1);
-            hapticImpact('medium');
-        }
-    };
-
-    recognition.onerror = (event) => {
-        console.error('Speech recognition error:', event.error);
+    } catch (e) {
+        console.error('Speech start error:', e);
         isListening = false;
-        const btn = document.getElementById('btn-voice-input');
-        if (btn) btn.classList.remove('listening');
-
-        if (event.error === 'not-allowed') {
-            alert('Доступ к микрофону запрещен. Разрешите доступ в настройках браузера.');
-        }
+    }
+}
     };
 
     recognition.onend = () => {

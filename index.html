@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
-            <link rel="stylesheet" href="style.css?v=50.0">
+            <link rel="stylesheet" href="style.css?v=50.1">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -34,7 +34,7 @@
         };
 
         // Force Version Check
-        const CURRENT_VERSION = '50.0';
+        const CURRENT_VERSION = '50.1';
         if (localStorage.getItem('app_version') !== CURRENT_VERSION) {
             localStorage.setItem('app_version', CURRENT_VERSION);
             if ('serviceWorker' in navigator) {
@@ -178,17 +178,6 @@
                         <button class="voice-input-btn" id="btn-voice-input" title="Голосовой ввод">
                             <i class="fas fa-microphone"></i>
                         </button>
-                    </div>
-
-                    <!-- Quick Templates -->
-                    <div class="templates-section">
-                        <div class="templates-label">Быстрые шаблоны:</div>
-                        <div class="chips-row" id="templates-container">
-                            <button class="chip" onclick="applyTemplate('Купить продукты')">🛒 Продукты</button>
-                            <button class="chip" onclick="applyTemplate('Позвонить в банк')">📞 Звонок</button>
-                            <button class="chip" onclick="applyTemplate('Встреча')">👥 Встреча</button>
-                            <button class="chip" onclick="applyTemplate('Спорт')">💪 Спорт</button>
-                        </div>
                     </div>
 
                     <div class="desc-box">
@@ -425,13 +414,13 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
     <!-- Config -->
-    <script src="firebase-config.js?v=53.0"></script>
+    <script src="firebase-config.js?v=53.1"></script>
 
     <!-- Scripts -->
-    <script src="app.js?v=53.0"></script>
+    <script src="app.js?v=53.1"></script>
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js?v=53.0').then(reg => {
+            navigator.serviceWorker.register('sw.js?v=53.1').then(reg => {
                 reg.update();
             });
         }
