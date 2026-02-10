@@ -240,7 +240,7 @@ body {
 }
 
 .card-header h2 {
-    font-size: 16px;
+    font-size: 13px;
     /* Smaller font */
     font-weight: 700;
     letter-spacing: 1px;
@@ -251,7 +251,7 @@ body {
 .counter-badge {
     color: var(--text-gray);
     font-weight: 600;
-    font-size: 16px;
+    font-size: 13px;
     background: #F2F2F7;
     padding: 4px 10px;
     border-radius: 12px;
