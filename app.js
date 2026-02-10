@@ -186,7 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Show onboarding for first-time users - DISABLED per user request
     // showOnboarding();
 
-    console.log("App v57.0 loaded successfully");
+    console.log("App v58.0 loaded successfully");
 });
 
 // Firebase Config (loaded from separate file)
