@@ -186,7 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Show onboarding for first-time users - DISABLED per user request
     // showOnboarding();
 
-    console.log("App v67.0 loaded successfully");
+    console.log("App v68.0 loaded successfully");
 });
 
 // Firebase Config (loaded from separate file)
@@ -1456,7 +1456,9 @@ function openEditModal(task) {
 
     document.getElementById('input-title').value = task.title;
     document.getElementById('input-desc').value = task.description || '';
-    document.getElementById('input-tags').value = task.tags || '';
+    // input-tags больше не используется, но оставим проверку на случай старых задач
+    const inputTags = document.getElementById('input-tags');
+    if (inputTags) inputTags.value = task.tags || '';
     document.getElementById('input-time').value = task.time || '';
 
     selectedCategory = task.category;
