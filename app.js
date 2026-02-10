@@ -183,10 +183,10 @@ document.addEventListener('DOMContentLoaded', () => {
     switchTab('home'); // Force correct view state
     renderStack();
 
-    // Show onboarding for first-time users
-    showOnboarding();
+    // Show onboarding for first-time users - DISABLED per user request
+    // showOnboarding();
 
-    console.log("App v49.6 loaded successfully");
+    console.log("App v50.0 loaded successfully");
 });
 
 // Firebase Config (loaded from separate file)
@@ -1272,8 +1272,8 @@ function renderTasksForCategory(container, taskList) {
             ${infoText ? `<div class="info-pill">${infoText}</div>` : ''}
         `;
 
-        // Setup swipe handlers
-        setupSwipeHandlers(div, task);
+        // Setup swipe handlers - DISABLED per user request
+        // setupSwipeHandlers(div, task);
 
         const checkboxArea = div.querySelector('.task-checkbox-area');
         checkboxArea.addEventListener('click', (e) => {
