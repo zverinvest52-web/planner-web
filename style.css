@@ -218,7 +218,7 @@ body {
     bottom: 0;
     background: var(--card-white);
     border-radius: var(--card-radius) var(--card-radius) 0 0;
-    box-shadow: none;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
     transition: top 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
     display: flex;
     flex-direction: column;
@@ -591,7 +591,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    box-shadow: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     touch-action: none;
     /* Critical for drag handling */
     user-select: none;
@@ -1395,10 +1395,10 @@ body {
     opacity: 0.7;
 }
 
-/* Cards - no shadows for clean look */
+/* Cards - with shadows for separation */
 .dark-theme .category-card {
     background: var(--card-white);
-    box-shadow: none;
+    box-shadow: var(--shadow-card);
     border: 1px solid var(--border-color);
 }
 
